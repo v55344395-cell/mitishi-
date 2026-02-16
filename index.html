@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Мытищи.io</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Varela+Round&family=Righteous&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'Varela Round',sans-serif;background:#2a5a2a;overflow:hidden;touch-action:none;}
+canvas{display:block;touch-action:none;position:fixed;top:0;left:0;}
+.screen{position:fixed;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;background:radial-gradient(circle,#00D4FF 0%,#0040A0 100%);z-index:1000;padding:16px;}
+.screen.hidden{display:none!important;}
+h1{font-family:'Righteous',cursive;font-size:clamp(36px,10vw,72px);color:white;text-shadow:0 0 30px rgba(0,212,255,0.8);margin-bottom:16px;animation:glow 2s infinite;}
+@keyframes glow{0%,100%{text-shadow:0 0 30px rgba(0,212,255,0.8);}50%{text-shadow:0 0 50px rgba(255,107,157,0.8);}}
+.btn{background:linear-gradient(135deg,#00D4FF,#0080C0);border:3px solid white;color:white;font-family:'Varela Round',sans-serif;font-size:clamp(16px,4vw,22px);font-weight:bold;padding:12px 32px;border-radius:50px;margin:7px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,0.5);transition:transform .1s;}
+.btn:active{transform:scale(0.95);}
+.btn-red{background:linear-gradient(135deg,#FF6B9D,#D02070);}
+.btn-gold{background:linear-gradient(135deg,#FFD700,#FFA500);color:#000;}
+.btn-green{background:linear-gradient(135deg,#00FF88,#00CC66);}
+.btn-sm{font-size:14px;padding:8px 20px;margin:4px;}
+/* HUD */
+#hud{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:200;padding:10px;}
+#hud-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.hud-stat{background:rgba(0,0,0,0.75);padding:7px 14px;border-radius:12px;color:white;font-size:15px;font-weight:bold;border:2px solid rgba(0,212,255,0.4);white-space:nowrap;}
+/* Leaderboard */
+#leaderboard{position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.8);border:2px solid rgba(0,212,255,0.5);border-radius:14px;padding:10px 14px;color:white;font-size:13px;z-index:200;min-width:160px;}
+#leaderboard h3{font-family:'Righteous',cursive;color:#FFD700;font-size:14px;margin-bottom:6px;text-align:center;}
+.lb-row{display:flex;justify-content:space-between;gap:10px;padding:2px 0;font-size:12px;}
+.lb-row.me{color:#00FFD4;font-weight:bold;}
+/* Joystick */
+#joystick{position:fixed;bottom:28px;left:28px;width:110px;height:110px;background:radial-gradient(circle,rgba(0,212,255,0.25),rgba(0,212,255,0.08));border:3px solid rgba(0,212,255,0.45);border-radius:50%;z-index:300;pointer-events:all;}
+#stick{position:absolute;width:46px;height:46px;background:radial-gradient(circle at 30% 30%,#00D4FF,#0080C0);border:3px solid white;border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%);}
+#shootBtn{position:fixed;bottom:28px;right:28px;width:74px;height:74px;background:radial-gradient(circle at 30% 30%,#FF6B9D,#D02070);border:3px solid white;border-radius:50%;color:white;font-size:28px;z-index:300;pointer-events:all;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+/* Message */
+#message{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#00D4FF,#FF6B9D);padding:16px 32px;border-radius:18px;color:white;font-size:22px;font-weight:bold;text-align:center;z-index:400;opacity:0;pointer-events:none;transition:opacity .3s;border:3px solid white;}
+#message.show{opacity:1;}
+/* Death zone warning */
+#zoneWarn{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,0,0,0.8);padding:12px 28px;border-radius:14px;color:white;font-size:18px;font-weight:bold;z-index:400;display:none;border:2px solid white;}
+/* Minimap */
+#minimap{position:fixed;bottom:160px;right:10px;width:90px;height:90px;border:2px solid rgba(255,255,255,0.4);border-radius:8px;background:rgba(0,0,0,0.5);z-index:200;}
+/* Screens */
+#startScreen .subtitle{color:rgba(255,255,255,0.8);font-size:16px;margin-bottom:14px;}
+#startScreen .tagline{background:rgba(0,0,0,0.4);padding:14px 20px;border-radius:14px;margin-bottom:16px;color:rgba(255,255,255,0.85);font-size:14px;line-height:1.7;text-align:center;max-width:380px;}
+.scroll-screen{overflow-y:auto;justify-content:flex-start;padding-top:20px;}
+/* Shop / Chests / Pass */
+.sticky-header{position:sticky;top:0;background:radial-gradient(circle,#00D4FF 0%,#0040A0 100%);padding:12px 0;z-index:10;text-align:center;width:100%;}
+#charGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;max-width:600px;width:100%;margin:16px auto;padding:0 10px;}
+.char-card{position:relative;border-radius:14px;padding:12px;text-align:center;border:3px solid rgba(255,255,255,0.3);background:rgba(0,0,0,0.3);}
+.char-card.owned{background:linear-gradient(135deg,rgba(0,212,255,0.2),rgba(255,107,157,0.2));border-color:rgba(0,212,255,0.6);}
+.char-card.selected{background:linear-gradient(135deg,rgba(255,215,0,0.3),rgba(255,107,157,0.3));border-color:#FFD700;}
+.char-badge{position:absolute;top:5px;right:5px;padding:2px 8px;border-radius:8px;font-size:10px;font-weight:bold;}
+.char-level-bar{margin:6px 2px 0;height:6px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden;}
+.char-level-fill{height:100%;border-radius:4px;transition:width .4s;}
+/* Chest */
+#chestGrid{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;max-width:600px;width:100%;margin:14px auto;padding:0 10px;max-height:55vh;overflow-y:auto;}
+.chest-card{background:rgba(0,0,0,0.4);border:3px solid rgba(0,212,255,0.4);border-radius:18px;padding:18px;text-align:center;max-width:260px;width:100%;}
+/* Chest open overlay */
+#chestOpenOverlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle,#001a40 0%,#000510 100%);z-index:2000;flex-direction:column;align-items:center;justify-content:center;}
+#chestOpenOverlay.active{display:flex;}
+#bubbleCanvas{cursor:pointer;filter:drop-shadow(0 0 28px rgba(0,212,255,0.8));transition:transform .08s;}
+#bubbleCanvas:active{transform:scale(0.93);}
+#chestRarityLabel{font-family:'Righteous',cursive;font-size:clamp(22px,6vw,36px);font-weight:bold;letter-spacing:2px;margin-bottom:12px;text-transform:uppercase;}
+#chestTapsLeft{font-size:clamp(15px,4vw,20px);color:rgba(255,255,255,0.7);margin-top:12px;}
+#chestResultOverlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:3000;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+#chestResultOverlay.active{display:flex;}
+.result-box{background:linear-gradient(135deg,rgba(0,40,80,0.95),rgba(0,10,30,0.95));border-radius:22px;padding:30px 36px;text-align:center;max-width:320px;width:100%;animation:popIn .45s ease-out both;}
+@keyframes popIn{0%{transform:scale(.3);opacity:0;}70%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+@keyframes bubblePop{0%{transform:scale(1);opacity:1;}40%{transform:scale(1.25);opacity:.8;}100%{transform:scale(.1);opacity:0;}}
+.bubble-popping{animation:bubblePop .35s ease-in forwards;}
+@keyframes rarityFlash{0%,100%{opacity:1;}50%{opacity:.3;}}
+.rarity-flash{animation:rarityFlash .25s ease-in-out 3;}
+/* Pass */
+#passGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;width:100%;max-width:780px;margin:0 auto;padding:0 12px 20px;}
+/* Almanac */
+.alm-entry{background:rgba(0,0,0,0.45);border-radius:14px;padding:14px 16px;margin:8px 0;max-width:480px;width:100%;text-align:left;border-left:5px solid #00D4FF;}
+.alm-entry.locked{opacity:.4;filter:grayscale(.6);border-left-color:#555;}
+/* Key select */
+#keyCharGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;max-width:580px;width:100%;padding:0 10px;max-height:60vh;overflow-y:auto;}
+/* Death / Victory */
+#deathScreen{background:radial-gradient(circle,#400000 0%,#0a0000 100%);}
+#victoryScreen{background:radial-gradient(circle,#004020 0%,#001008 100%);}
+/* Respawn */
+#respawnOverlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:800;flex-direction:column;align-items:center;justify-content:center;color:white;}
+#respawnOverlay.active{display:flex;}
+#respawnTimer{font-family:'Righteous',cursive;font-size:80px;color:#FF6B9D;text-shadow:0 0 30px rgba(255,107,157,0.8);}
+/* Name input */
+#nameInputWrap{background:rgba(0,0,0,0.5);padding:16px 20px;border-radius:14px;margin-bottom:14px;text-align:center;}
+#nameInputWrap input{background:rgba(255,255,255,0.15);border:2px solid rgba(0,212,255,0.6);border-radius:10px;color:white;font-size:18px;padding:10px 16px;width:220px;text-align:center;font-family:'Varela Round',sans-serif;outline:none;}
+#nameInputWrap input::placeholder{color:rgba(255,255,255,0.4);}
+/* Hazard bar */
+#hazardBar{position:fixed;bottom:0;left:0;width:100%;height:6px;background:rgba(255,255,255,0.1);z-index:200;}
+#hazardFill{height:100%;background:linear-gradient(90deg,#00D4FF,#FF6B9D);width:0%;transition:width .3s;}
+/* Zone ring */
+.zone-pulse{animation:zonePulse 1s infinite;}
+@keyframes zonePulse{0%,100%{opacity:.7;}50%{opacity:1;}}
+@keyframes pulse{0%,100%{box-shadow:0 0 5px rgba(0,255,0,0.5);}50%{box-shadow:0 0 15px rgba(0,255,0,1);}}
+/* Balance bar in screens */
+.bal-bar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:6px 0;}
+.bal-chip{background:rgba(0,0,0,0.6);padding:7px 16px;border-radius:12px;font-size:15px;font-weight:bold;color:white;border:1px solid rgba(0,212,255,0.4);}
+</style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<!-- HUD -->
+
+<div id="hud" style="display:none;">
+  <div id="hud-top">
+    <div class="hud-stat" id="hudScore">💰 0</div>
+    <div class="hud-stat" id="hudHazard" style="flex:1;text-align:center;">Грязность: 0%</div>
+    <div class="hud-stat" id="hudChar">😊 Ч</div>
+  </div>
+  <div id="multiExitBtn" style="display:none;position:fixed;top:70px;left:10px;pointer-events:all;z-index:250;">
+    <button class="btn btn-sm btn-red" onclick="exitMultiplayer()" style="font-size:13px;padding:6px 14px;">🚪 ВЫЙТИ</button>
+  </div>
+  <div id="onlineIndicator" style="display:none;position:fixed;top:70px;right:10px;background:rgba(0,255,0,0.8);padding:4px 10px;border-radius:8px;color:white;font-size:11px;font-weight:bold;border:2px solid #00FF00;animation:pulse 2s infinite;">
+    🟢 ОНЛАЙН
+  </div>
+</div>
+<div id="hazardBar" style="display:none;"><div id="hazardFill"></div></div>
+
+<!-- Leaderboard -->
+
+<div id="leaderboard" style="display:none;">
+  <h3>🏆 ТОП</h3>
+  <div id="lbList"></div>
+</div>
+
+<!-- Minimap -->
+
+<canvas id="minimap" style="display:none;"></canvas>
+
+<!-- Joystick -->
+
+<div id="joystick" style="display:none;"><div id="stick"></div></div>
+<div id="shootBtn" style="display:none;">E</div>
+
+<!-- Message -->
+
+<div id="message"></div>
+<div id="zoneWarn">☠️ ВЫЙДЕШЬ ЗА ЗОНУ — УМРЁШЬ!</div>
+
+<!-- Respawn overlay -->
+
+<div id="respawnOverlay">
+  <div style="font-family:'Righteous',cursive;font-size:28px;margin-bottom:10px;">💀 ТЫ УМЕР</div>
+  <div id="respawnTimer">3</div>
+  <div style="font-size:16px;margin-top:10px;opacity:.7;">Возрождение...</div>
+</div>
+
+<!-- ========== SCREENS ========== -->
+
+<!-- START -->
+
+<div id="startScreen" class="screen">
+  <h1>МЫТИЩИ<span style="color:#FF6B9D;">.io</span></h1>
+  <div class="subtitle">Персонаж: <span id="charNameDisplay" style="color:#FFD700;font-weight:bold;">Ч</span></div>
+  <div id="nameInputWrap">
+    <div style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:8px;">Твой никнейм:</div>
+    <input type="text" id="playerName" placeholder="Введи имя..." maxlength="16" value="">
+  </div>
+  <button class="btn btn-red" onclick="startGame()">▶ ИГРАТЬ</button>
+  <div style="background:rgba(0,0,0,0.5);border-radius:14px;padding:12px 16px;margin:8px 0;max-width:380px;width:100%;">
+    <div style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:8px;text-align:center;">📍 Выбери локацию:</div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;">
+      <button class="btn btn-sm" id="locBtnMyt" onclick="selectLocation('mytishchi')" style="background:linear-gradient(135deg,#00D4FF,#0080C0);border:2px solid white;">🏙️ Мытищи</button>
+      <button class="btn btn-sm" id="locBtnMur" onclick="selectLocation('murino')" style="opacity:0.5;" disabled>🌫️ Мурино 🔒</button>
+      <button class="btn btn-sm" id="locBtnMol" onclick="selectLocation('molochnoe')" style="opacity:0.5;" disabled>🕸️ Молочное 🔒</button>
+      <button class="btn btn-sm" id="locBtnMulti" onclick="selectLocation('multiplayer')" style="background:linear-gradient(135deg,#FF6B9D,#D02070);border:2px solid white;">🌍 Мультиплеер</button>
+    </div>
+    <div id="locLabel" style="text-align:center;color:#FFD700;font-size:12px;margin-top:6px;">Выбрано: Мытищи</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;">
+    <button class="btn btn-sm" onclick="openShop('start')">🛒 Персонажи</button>
+    <button class="btn btn-sm btn-gold" onclick="openChests('start')">📦 Сундуки</button>
+    <button class="btn btn-sm" onclick="openPass('start')">🎁 Пасс</button>
+    <button class="btn btn-sm" onclick="openAlmanac('start')">📖 Альманах</button>
+  </div>
+  <div class="tagline">
+    🕹️ Джойстик — движение &nbsp;|&nbsp; 🔴 E — стрелять/взаимодействие<br>
+    💰 Собирай друнблеи быстрее ботов<br>
+    🚿 Мойся в душе чтобы сбросить грязность<br>
+    ⚠️ Следи за зоной — не выходи за края!
+  </div>
+</div>
+
+<!-- SHOP -->
+
+<div id="shopScreen" class="screen scroll-screen hidden">
+  <div class="sticky-header">
+    <h1 style="font-size:clamp(26px,6vw,44px);">🛒 ПЕРСОНАЖИ</h1>
+    <div class="bal-bar">
+      <div class="bal-chip">💰 <span id="shopBalance">0</span></div>
+      <div class="bal-chip">💎 <span id="shopCrystals">0</span></div>
+    </div>
+  </div>
+  <div id="charGrid"></div>
+  <button class="btn btn-sm" onclick="closeShop()">⬅ НАЗАД</button>
+</div>
+
+<!-- CHESTS -->
+
+<div id="chestScreen" class="screen scroll-screen hidden">
+  <div class="sticky-header">
+    <h1 style="font-size:clamp(26px,6vw,44px);">📦 СУНДУКИ</h1>
+    <div class="bal-bar">
+      <div class="bal-chip">💰 <span id="chestBalance">0</span></div>
+      <div class="bal-chip">💎 <span id="crystalBalance">0</span></div>
+    </div>
+  </div>
+  <div id="chestGrid"></div>
+  <button class="btn btn-sm" onclick="closeChests()">⬅ НАЗАД</button>
+</div>
+
+<!-- CHEST OPEN -->
+
+<div id="chestOpenOverlay">
+  <div id="chestRarityLabel">ОБЫЧНОСТЬ</div>
+  <canvas id="bubbleCanvas" width="260" height="260"></canvas>
+  <div id="chestTapsLeft">Нажми 5 раз</div>
+  <button class="btn btn-sm btn-red" onclick="cancelChestOpen()" style="margin-top:24px;">✖ ОТМЕНА</button>
+</div>
+
+<!-- CHEST RESULT -->
+
+<div id="chestResultOverlay">
+  <div class="result-box" id="resultBox">
+    <div style="font-size:76px;margin-bottom:8px;" id="resultEmoji"></div>
+    <div style="font-family:'Righteous',cursive;font-size:clamp(22px,7vw,34px);font-weight:bold;margin:6px 0;" id="resultName"></div>
+    <div style="font-size:13px;font-weight:bold;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;" id="resultRarity"></div>
+    <div id="resultDesc" style="font-size:13px;"></div>
+    <button class="btn btn-green" style="margin-top:14px;" onclick="closeResult()">✅ ЗАБРАТЬ</button>
+  </div>
+</div>
+
+<!-- KEY SELECT -->
+
+<div id="keySelectOverlay" class="screen hidden">
+  <h1 style="font-size:clamp(28px,7vw,48px);" id="keySelectTitle">🔑 КЛЮЧ</h1>
+  <div style="color:rgba(255,255,255,0.8);margin-bottom:14px;font-size:16px;">Выбери персонажа:</div>
+  <div id="keyCharGrid"></div>
+  <button class="btn btn-sm" onclick="closeKeySelect()" style="margin-top:14px;">⬅ НАЗАД</button>
+</div>
+
+<!-- PASS -->
+
+<div id="passScreen" class="screen scroll-screen hidden">
+  <div class="sticky-header">
+    <h1 style="font-size:clamp(26px,6vw,44px);">🎁 МЕЛСТРОЙ ПАСС</h1>
+    <div style="font-size:16px;color:#FFD700;font-weight:bold;">Тир: <span id="passCurrentTier">0</span>/60</div>
+  </div>
+  <div id="passGrid"></div>
+  <button class="btn btn-sm" onclick="closePass()">⬅ НАЗАД</button>
+</div>
+
+<!-- ALMANAC -->
+
+<div id="almanacScreen" class="screen scroll-screen hidden">
+  <div class="sticky-header">
+    <h1 style="font-size:clamp(26px,6vw,44px);">📖 АЛЬМАНАХ</h1>
+    <div style="color:rgba(255,255,255,0.6);font-size:12px;">Враги которых ты встречал</div>
+  </div>
+  <div id="almanacList" style="width:100%;max-width:500px;padding:0 12px 16px;"></div>
+  <button class="btn btn-sm" onclick="closeAlmanac()">⬅ НАЗАД</button>
+</div>
+
+<!-- DEATH -->
+
+<div id="deathScreen" class="screen hidden">
+  <h1 style="color:#FF6B6B;">☠️ ПОРАЖЕНИЕ</h1>
+  <div id="deathStats" style="font-size:18px;margin:14px;text-align:center;"></div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;">
+    <button class="btn btn-red" onclick="startGame()">🔄 ЗАНОВО</button>
+    <button class="btn btn-sm" onclick="showStart()">🏠 МЕНЮ</button>
+    <button class="btn btn-sm btn-gold" onclick="openChests('death')">📦 СУНДУКИ</button>
+    <button class="btn btn-sm" onclick="openShop('death')">🛒 ПЕРСОНАЖИ</button>
+  </div>
+</div>
+
+<!-- VICTORY (session end) -->
+
+<div id="victoryScreen" class="screen hidden">
+  <h1 style="color:#00FFD4;">🏆 РАУНД ОКОНЧЕН</h1>
+  <div id="victoryStats" style="font-size:18px;margin:14px;text-align:center;"></div>
+  <div style="display:flex;flex-wrap:wrap;justify-content:center;">
+    <button class="btn btn-green" onclick="startGame()">🔄 ЕЩЁ РАЗ</button>
+    <button class="btn btn-sm" onclick="showStart()">🏠 МЕНЮ</button>
+    <button class="btn btn-sm btn-gold" onclick="openChests('victory')">📦 СУНДУКИ</button>
+  </div>
+</div>
+
+<script>
+// ===========================
+//  МЫТИЩИ.IO — Полная версия
+// ===========================
+
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const mmCv   = document.getElementById('minimap');
+const mmCtx  = mmCv.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// ===== WORLD =====
+let WORLD_W = 3200;
+let WORLD_H = 3200;
+const TILE    = 80;
+
+// Camera
+let cam = { x: 0, y: 0 };
+
+// ===== SAVE DATA =====
+let totalEarned   = parseInt(localStorage.getItem('totalEarned')   || '0');
+let totalCrystals = parseInt(localStorage.getItem('totalCrystals') || '0');
+let currentChar   = localStorage.getItem('currentChar') || 'ch';
+let unlocked      = JSON.parse(localStorage.getItem('unlocked')    || '["ch"]');
+let murinoUnlocked   = localStorage.getItem('murinoUnlocked')   === 'true';
+let molochnoeUnlocked = localStorage.getItem('molochnoeUnlocked') === 'true';
+let charLevels    = JSON.parse(localStorage.getItem('charLevels')  || '{"ch":1}');
+let passProgress  = parseInt(localStorage.getItem('passProgress')  || '0');
+let passTier      = parseInt(localStorage.getItem('passTier')      || '0');
+let passRewards   = JSON.parse(localStorage.getItem('passRewards') || '[]');
+let seenEnemies   = JSON.parse(localStorage.getItem('seenEnemies') || '[]');
+let playerName    = localStorage.getItem('playerName') || '';
+
+// Migration
+if (!localStorage.getItem('charLevelsMigrated_v2')) {
+  if (charLevels['ch'] === 3) { charLevels['ch'] = 1; localStorage.setItem('charLevels', JSON.stringify(charLevels)); }
+  localStorage.setItem('charLevelsMigrated_v2', 'true');
+}
+
+// ===== CHARACTERS =====
+const characters = {
+  ch:         { name:'Ч',             rarity:'Обычность',     cost:0,       speed:1,    hazard:1,    color:'#FFF',    shoot:false, shootType:'normal',   special:null,           murinoOnly:false, molochnoeOnly:false },
+  kotnost:    { name:'Котность',      rarity:'Обычность',     cost:30000,   speed:1.5,  hazard:0.5,  color:'#F4A460', shoot:false, shootType:'normal',   special:null,           murinoOnly:false, molochnoeOnly:false },
+  drun:       { name:'Друн',          rarity:'Обычность',     cost:50000,   speed:1.3,  hazard:0.7,  color:'#F00',    shoot:false, shootType:'normal',   special:null,           murinoOnly:false, molochnoeOnly:false },
+  etost:      { name:'Этость',        rarity:'Обычность',     cost:40000,   speed:1.8,  hazard:0.4,  color:'#FF69B4', shoot:false, shootType:'normal',   special:null,           murinoOnly:false, molochnoeOnly:false },
+  pavuk_char: { name:'Павук',         rarity:'Обычность',     cost:60000,   speed:1.1,  hazard:0.6,  color:'#8B4513', shoot:true,  shootType:'web',      special:null,           murinoOnly:false, molochnoeOnly:true  },
+  yakrasny:   { name:'Я уже красный', rarity:'Редкость',      cost:120000,  speed:0.9,  hazard:1.1,  color:'#FF2222', shoot:false, shootType:'normal',   special:'push',         murinoOnly:false, molochnoeOnly:false },
+  myt:        { name:'Мыть',          rarity:'Редкость',      cost:100000,  speed:0.9,  hazard:1.5,  color:'#0CF',    shoot:false, shootType:'normal',   special:null,           murinoOnly:false, molochnoeOnly:false },
+  dance:      { name:'Танцуем!',      rarity:'Редкость',      cost:100000,  speed:1.5,  hazard:1,    color:'#F0F',    shoot:false, shootType:'normal',   special:null,           murinoOnly:false, molochnoeOnly:false },
+  kyo:        { name:'Кьо',           rarity:'Редкость',      cost:110000,  speed:1.15, hazard:0.8,  color:'#9370DB', shoot:false, shootType:'normal',   special:'invisibility', murinoOnly:false, molochnoeOnly:false },
+  shlyapuk:   { name:'Шляпук',        rarity:'Редкость',      cost:130000,  speed:1.0,  hazard:0.6,  color:'#A0522D', shoot:true,  shootType:'web_push', special:null,           murinoOnly:false, molochnoeOnly:true  },
+  moydodyr:   { name:'Мойдодыр',      rarity:'Великость',     cost:250000,  speed:0.75, hazard:0.9,  color:'#0F0',    shoot:true,  shootType:'normal',   special:null,           murinoOnly:false, molochnoeOnly:false },
+  vkusnost:   { name:'Вкусность',     rarity:'Великость',     cost:300000,  speed:1.0,  hazard:0.5,  color:'#FFB6C1', shoot:true,  shootType:'slow',     special:null,           murinoOnly:true,  molochnoeOnly:false },
+  goodfog:    { name:'Добрый Фог',    rarity:'Мемность',      cost:400000,  speed:1.0,  hazard:1,    color:'#1E9',    shoot:true,  shootType:'normal',   special:null,           murinoOnly:false, molochnoeOnly:false },
+  bambam:     { name:'Бэм Бэм',       rarity:'Мемность',      cost:500000,  speed:0.65, hazard:0.8,  color:'#FF8C00', shoot:true,  shootType:'aoe',      special:null,           murinoOnly:true,  molochnoeOnly:false },
+  arthur:     { name:'Артур',         rarity:'Божественность', cost:750000,  speed:2,    hazard:2,    color:'#F69',    shoot:false, shootType:'normal',   special:null,           murinoOnly:false, molochnoeOnly:false },
+  melstroy:   { name:'Мелстрой',      rarity:'Божественность', cost:1000000, speed:1.5,  hazard:1.5,  color:'#FFD700', shoot:true,  shootType:'normal',   special:null,           murinoOnly:true,  molochnoeOnly:false },
+  fog_char:   { name:'Фог',           rarity:'Божественность', cost:1200000, speed:1.2,  hazard:1.2,  color:'#888',    shoot:true,  shootType:'fog',      special:null,           murinoOnly:true,  molochnoeOnly:false }
+};
+const charEmoji = {
+  ch:'😊', kotnost:'🐱', drun:'🔴', etost:'💨', pavuk_char:'🕷️', yakrasny:'🟥',
+  myt:'🚿', dance:'💃', kyo:'👻', shlyapuk:'🍄', moydodyr:'🚰',
+  vkusnost:'🐰', goodfog:'💧', bambam:'💥', arthur:'👋', melstroy:'⭐', fog_char:'🌫️'
+};
+const RARITIES = ['Обычность','Редкость','Великость','Мемность','Божественность'];
+const rarityColors = { 'Обычность':'#AAAAAA','Редкость':'#4FC3F7','Великость':'#CE93D8','Мемность':'#FFCC02','Божественность':'#FF6B6B' };
+const rarityGlow   = { 'Обычность':'rgba(170,170,170,0.6)','Редкость':'rgba(79,195,247,0.7)','Великость':'rgba(206,147,216,0.7)','Мемность':'rgba(255,204,2,0.7)','Божественность':'rgba(255,107,107,0.8)' };
+const charsByRarity = {
+  'Обычность':      ['kotnost','drun','etost','pavuk_char'],
+  'Редкость':       ['yakrasny','myt','dance','kyo','shlyapuk'],
+  'Великость':      ['moydodyr','vkusnost'],
+  'Мемность':       ['goodfog','bambam'],
+  'Божественность': ['arthur','melstroy','fog_char']
+};
+
+function getCharStats(id) {
+  var b = characters[id]; if (!b) return null;
+  var lv = charLevels[id] || 0;
+  var mx = lv >= 3;
+  var res = Object.assign({}, b);
+  res.speed = b.speed * (mx ? 1.2 : 1);
+  res.hazard = b.hazard * (mx ? 0.8 : 1);
+  res.level = lv; res.isMaxLevel = mx;
+  return res;
+}
+function getCharLevel(id) { return charLevels[id] || 0; }
+function upgradeChar(id) {
+  const lv = charLevels[id] || 0;
+  if (lv < 3) { charLevels[id] = lv + 1; localStorage.setItem('charLevels', JSON.stringify(charLevels)); }
+  return charLevels[id];
+}
+function canCharDrop(id) { return (charLevels[id] || 0) < 3; }
+
+// ===== CHESTS =====
+const chestTypes = {
+  bubble:  { id:'bubble',  name:'Пузырь',   cost:20000, emoji:'🫧', desc:'Нажми 5 раз — 20% шанс повысить редкость!',  tapsNeeded:5,  upgradeChance:0.20, crystalCost:false, murinoOnly:false, molochnoeOnly:false },
+  dymnost: { id:'dymnost', name:'Дымность', cost:50000, emoji:'🌫️', desc:'Нажми 5 раз — 30% шанс повысить редкость!\n🔒 Открывается в Мурино', tapsNeeded:5, upgradeChance:0.30, crystalCost:false, murinoOnly:true, molochnoeOnly:false },
+  star:    { id:'star',    name:'Звезда',   cost:100,   emoji:'⭐', desc:'Нажми 6 раз — 35% шанс повысить редкость!\nПокупается за 💎',       tapsNeeded:6,  upgradeChance:0.35, crystalCost:true,  murinoOnly:false, molochnoeOnly:false },
+  pautina: { id:'pautina', name:'Паутина',  cost:45000, emoji:'🕸️', desc:'Нажми 10 раз — 15% шанс повысить редкость!\n🔒 Открывается в Молочное', tapsNeeded:10, upgradeChance:0.15, crystalCost:false, murinoOnly:false, molochnoeOnly:true }
+};
+let chestState = { active:false, type:null, rarity:'Обычность', tapsLeft:5, fromScreen:'start' };
+let _chestFrom = 'start';
+
+// ===== PASS =====
+function getPassTierReward(tier) {
+  if (tier===20) return {type:'key',rarity:'Обычность',name:'Обычность Ключ',emoji:'🔑'};
+  if (tier===40) return {type:'key',rarity:'Редкость',name:'Редкость Ключ',emoji:'🗝️'};
+  if (tier===60) return {type:'key',rarity:'Великость',name:'Великость Ключ',emoji:'🔐'};
+  if (tier<20)  return {type:'chest',chest:'bubble',name:'Пузырь',emoji:'🫧'};
+  if (tier<40)  return {type:'chest',chest:'dymnost',name:'Дымность',emoji:'🌫️'};
+  return {type:'chest',chest:'pautina',name:'Паутина',emoji:'🕸️'};
+}
+function getPassTierCost(tier) { return tier<20?20000:tier<40?30000:40000; }
+function updatePassProgress(spent) {
+  passProgress += spent;
+  while (passTier < 60) {
+    const cost = getPassTierCost(passTier);
+    if (passProgress >= cost) {
+      passProgress -= cost; passTier++;
+      localStorage.setItem('passTier', passTier);
+      localStorage.setItem('passProgress', passProgress);
+      const r = getPassTierReward(passTier);
+      if (r) showMessage('🎁 Пасс Тир ' + passTier + ': ' + r.emoji + ' ' + r.name, 3000);
+    } else break;
+  }
+  localStorage.setItem('passProgress', passProgress);
+}
+
+// ===== ALMANAC DATA =====
+const enemyLore = [
+  { id:'gryaznya', name:'Грязь',        icon:'🪣', location:'Мытищи',  locColor:'#8B7355', desc:'Бегут прямо на вас, не давая мыться. Меньше грязни — дольше живёшь!', seenIn:['mytishchi'] },
+  { id:'fog_shooter',name:'Мытищ. Фог', icon:'🫧', location:'Мытищи',  locColor:'#00BFFF', desc:'Стоит на месте и стреляет пузырями. Держитесь подальше!', seenIn:['mytishchi'] },
+  { id:'pakost',   name:'Кислость',     icon:'🐇', location:'Мурино',   locColor:'#FF69B4', desc:'Кролик из Мурино. Снаряды замедляют игрока.', seenIn:['murino'] },
+  { id:'fog_runner',name:'Фог',         icon:'🌫️', location:'Мурино',   locColor:'#888',    desc:'Быстрый житель Мурино. Быстрее грязи!', seenIn:['murino'] },
+  { id:'pavuk',    name:'Павук',         icon:'🕷️', location:'Молочное', locColor:'#90EE90', desc:'Маленькие быстрые пауки. Шустрые но не очень опасные.', seenIn:['molochnoe'] },
+  { id:'big_pavuk',name:'Большой павук', icon:'🕸️', location:'Молочное', locColor:'#228B22', desc:'Медленный, но стреляет паутиной. Опасен на расстоянии!', seenIn:['molochnoe'] }
+];
+function markEnemySeen(id) {
+  if (!seenEnemies.includes(id)) { seenEnemies.push(id); localStorage.setItem('seenEnemies', JSON.stringify(seenEnemies)); }
+}
+
+// ===== SOUND =====
+let audioCtx = null, musicNode = null, musicGain = null, musicInterval = null;
+function getAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+function beep(freq, type, dur, vol, delay) {
+  try {
+    const ac=getAudio(), osc=ac.createOscillator(), g=ac.createGain();
+    osc.connect(g); g.connect(ac.destination);
+    osc.type=type||'square'; osc.frequency.setValueAtTime(freq, ac.currentTime+(delay||0));
+    g.gain.setValueAtTime(vol||0.12, ac.currentTime+(delay||0));
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime+(delay||0)+dur);
+    osc.start(ac.currentTime+(delay||0)); osc.stop(ac.currentTime+(delay||0)+dur);
+  } catch(e){}
+}
+function sfxClick()  { beep(440,'square',0.05,0.1); }
+function sfxCoin()   { beep(660,'sine',0.08,0.1); beep(880,'sine',0.06,0.08,0.05); }
+function sfxDie()    { beep(220,'sawtooth',0.3,0.2); beep(110,'sawtooth',0.4,0.15,0.2); }
+function sfxVictory(){ beep(523,'sine',0.15,0.15); beep(659,'sine',0.12,0.12,0.15); beep(784,'sine',0.2,0.14,0.3); }
+function sfxChestTap(){ beep(440,'sine',0.06,0.12); }
+function sfxChestOpen(){ [523,659,784,1047].forEach((f,i)=>beep(f,'sine',0.12,0.15,i*0.1)); }
+function sfxChestEmpty(){ beep(200,'sawtooth',0.2,0.1); }
+function sfxRarityUp(){ beep(880,'sine',0.08,0.2); beep(1100,'sine',0.08,0.18,0.1); }
+function stopMusic() { if (musicInterval) clearInterval(musicInterval); if (musicNode) { try { musicNode.stop(); } catch(e){} musicNode=null; } }
+function playMusicLoop(trackFn, bpm) {
+  stopMusic();
+  const ac = getAudio();
+  const beatLen = 60 / bpm;
+  function play() {
+    const track = trackFn();
+    let t = ac.currentTime;
+    track.forEach(([f,tp,d,v]) => {
+      if (f > 0) beep(f, tp||'square', d, v||0.1, t - ac.currentTime);
+      t += d;
+    });
+    musicInterval = setTimeout(play, track.reduce((s,[,,d])=>s+d,0)*1000);
+  }
+  play();
+}
+function playGameMusic() {
+  playMusicLoop(()=>[
+    [330,'sine',0.12,0.1],[392,'sine',0.12,0.1],[440,'sine',0.12,0.1],[392,'sine',0.12,0.1],
+    [330,'sine',0.12,0.1],[294,'sine',0.12,0.1],[262,'sine',0.18,0.1],[0,null,0.06,0]
+  ], 120);
+}
+function playMenuMusic() {
+  playMusicLoop(()=>[
+    [262,'sine',0.2,0.08],[330,'sine',0.2,0.08],[392,'sine',0.2,0.08],[0,null,0.1,0],
+    [392,'sine',0.15,0.08],[440,'sine',0.15,0.08],[392,'sine',0.2,0.08],[0,null,0.1,0]
+  ], 100);
+}
+
+// ===== PLAYER =====
+let player = {
+  x: WORLD_W/2, y: WORLD_H/2, size: 20, speed: 3, vx:0, vy:0,
+  color: '#FFF', maxHazard: 100, name: 'Ты',
+  score: 0, hazard: 0, alive: true,
+  pushCooldown:0, invisCooldown:0, invisUntil:0, shootCooldown:0,
+  killStreak:0
+};
+
+// ===== BOTS =====
+const BOT_NAMES = [
+  'КоляМыт','ФогБот','Пашка228','СлаваМур','ГрязьМакс','Вася.io',
+  'ТрамвайБот','ПавукПро','ДрунТоп','КотностьGG','МытищиПВП','СундукГАНГ',
+  'ЕтаОбычность','АртурБот','МойДодыр99','КьоТемный','ФогЧар','МелстройPRO',
+  'БамБамBoss','ЯКрасный','ТанцуемGG','ЗвездаМыт'
+];
+
+// Реалистичные имена для мультиплеера
+const MULTIPLAYER_NAMES = [
+  'xXx_Pro_xXx','Даня2010','Кирилл','Максим_228','NoobMaster','EzWin',
+  'Андрей','Саша123','DarkKnight','ShadowHunter','IvanGG','Петя',
+  'Dima4ik','TopPlayer','Артём','Никита_pro','KiLLeR','Влад666',
+  'GameOver','Миша','Серёга','Антон_TOP','xXxSniperxXx','Олег',
+  'RusPro','MoscowGamer','Женя','Илья228','FastBoy','SlowPoke',
+  'Viktor','Денис_pvp','Лёха','Степан','RedBull','BlueDragon',
+  'Костя','Паша_killer','Егор','Толян','WhiteWolf','BlackLion',
+  'Фёдор','Гриша_pro','Рома','Стас','GoldenEagle','SilverFox'
+];
+
+let bots = [];
+let BOT_COUNT = 15;
+
+function createBot(id) {
+  // В мультиплеере создаём смесь обычных ботов и агрессивных врагов
+  let isEnemy = false;
+  let enemyType = null;
+  
+  if (currentLocation === 'multiplayer' && Math.random() < 0.6) {
+    // 60% шанс создать врага вместо обычного бота
+    isEnemy = true;
+    const enemyTypes = ['gryaznya', 'fog_shooter', 'pakost', 'fog_runner', 'pavuk', 'big_pavuk'];
+    enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+  }
+  
+  const charKeys = Object.keys(characters);
+  const charId = charKeys[Math.floor(Math.random() * charKeys.length)];
+  const ch = characters[charId];
+  const x = 100 + Math.random() * (WORLD_W - 200);
+  const y = 100 + Math.random() * (WORLD_H - 200);
+  
+  let botConfig = {
+    id, 
+    name: isEnemy ? getEnemyName(enemyType) : (currentLocation === 'multiplayer' ? MULTIPLAYER_NAMES[id % MULTIPLAYER_NAMES.length] : BOT_NAMES[id % BOT_NAMES.length]),
+    x, y, vx:0, vy:0,
+    size: 20, 
+    speed: 2.5 + Math.random() * 1.5,
+    color: ch.color, 
+    charId,
+    score: Math.floor(Math.random() * 500),
+    hazard: 0, 
+    maxHazard: 100 * ch.hazard,
+    alive: true, 
+    respawnTimer: 0,
+    targetCoin: null, 
+    fleeTimer: 0,
+    shootCooldown: 0, 
+    shoot: ch.shoot, 
+    shootType: ch.shootType,
+    phase: Math.random() * Math.PI * 2,
+    isEnemy: isEnemy,
+    enemyType: enemyType,
+    aiType: 'normal' // по умолчанию обычный AI
+  };
+  
+  // Настройка врагов
+  if (isEnemy) {
+    switch(enemyType) {
+      case 'gryaznya':
+        botConfig.color = '#8B7355';
+        botConfig.speed = 3.5;
+        botConfig.aiType = 'chase'; // преследует игрока
+        botConfig.shoot = false;
+        break;
+      case 'fog_shooter':
+        botConfig.color = '#00BFFF';
+        botConfig.speed = 1.5;
+        botConfig.aiType = 'stationary'; // стоит на месте
+        botConfig.shoot = true;
+        botConfig.shootType = 'normal';
+        break;
+      case 'pakost':
+        botConfig.color = '#FF69B4';
+        botConfig.speed = 2.8;
+        botConfig.aiType = 'chase';
+        botConfig.shoot = true;
+        botConfig.shootType = 'slow';
+        break;
+      case 'fog_runner':
+        botConfig.color = '#888888';
+        botConfig.speed = 4.2;
+        botConfig.aiType = 'chase';
+        botConfig.shoot = false;
+        break;
+      case 'pavuk':
+        botConfig.color = '#90EE90';
+        botConfig.speed = 4.5;
+        botConfig.size = 15;
+        botConfig.aiType = 'chase';
+        botConfig.shoot = false;
+        break;
+      case 'big_pavuk':
+        botConfig.color = '#228B22';
+        botConfig.speed = 2.2;
+        botConfig.size = 25;
+        botConfig.aiType = 'stationary';
+        botConfig.shoot = true;
+        botConfig.shootType = 'web';
+        break;
+    }
+  }
+  
+  return botConfig;
+}
+
+function getEnemyName(enemyType) {
+  const names = {
+    'gryaznya': 'Грязь',
+    'fog_shooter': 'Мытищ.Фог',
+    'pakost': 'Кислость',
+    'fog_runner': 'Фог',
+    'pavuk': 'Павук',
+    'big_pavuk': 'БольшПавук'
+  };
+  return names[enemyType] || 'Враг';
+}
+
+function initBots() {
+  bots = [];
+  for (let i = 0; i < BOT_COUNT; i++) bots.push(createBot(i));
+}
+
+// ===== WORLD ENTITIES =====
+let coins = [];
+let showers = [];
+let projectiles = [];
+let aoeExplosions = [];
+let zone = { r: WORLD_W * 0.48, cx: WORLD_W/2, cy: WORLD_H/2, shrinkRate: 0.04, minR: 300 };
+let zoneTimer = 0;
+let gameRunning = false;
+let gameTick = 0;
+let sessionScore = 0;
+
+// ===== SPAWN =====
+function spawnCoins() {
+  coins = [];
+  for (let i = 0; i < 120; i++) {
+    coins.push({
+      x: 60 + Math.random() * (WORLD_W - 120),
+      y: 60 + Math.random() * (WORLD_H - 120),
+      size: 10, value: Math.floor(Math.random()*400)+100,
+      color: '#FFD700', angle: Math.random()*Math.PI*2,
+      crystal: Math.random() < 0.04
+    });
+  }
+}
+function spawnShowers() {
+  showers = [];
+  for (let i = 0; i < 12; i++) {
+    showers.push({
+      x: 80 + Math.random() * (WORLD_W - 160),
+      y: 80 + Math.random() * (WORLD_H - 160),
+      size: 30, color:'#C0E8FF'
+    });
+  }
+}
+function replenishCoins() {
+  while (coins.length < 80) {
+    coins.push({
+      x: 60 + Math.random() * (WORLD_W - 120),
+      y: 60 + Math.random() * (WORLD_H - 120),
+      size: 10, value: Math.floor(Math.random()*400)+100,
+      color: '#FFD700', angle: Math.random()*Math.PI*2,
+      crystal: Math.random() < 0.04
+    });
+  }
+}
+
+// ===== INIT GAME =====
+// Location background colors
+var LOC_BG = { mytishchi:'#4a7a3a', murino:'#3a3a4a', molochnoe:'#3a6a3a', multiplayer:'#2a2a5a' };
+var LOC_HAZARD = { mytishchi:'Грязность', murino:'Фогость', molochnoe:'Павукость', multiplayer:'Хаосность' };
+
+function startGame() {
+  var nameEl = document.getElementById('playerName');
+  var nm = nameEl ? nameEl.value.trim() : '';
+  if (nm) { playerName = nm; localStorage.setItem('playerName', nm); }
+  else if (!playerName) playerName = 'Игрок';
+
+  // Настройки для мультиплеера
+  if (currentLocation === 'multiplayer') {
+    WORLD_W = 6400; // Карта в 2 раза больше
+    WORLD_H = 6400;
+    BOT_COUNT = 40; // Больше ботов
+  } else {
+    WORLD_W = 3200;
+    WORLD_H = 3200;
+    BOT_COUNT = 15;
+  }
+
+  hideAllScreens();
+  document.getElementById('hud').style.display = 'block';
+  document.getElementById('hazardBar').style.display = 'block';
+  document.getElementById('leaderboard').style.display = 'block';
+  document.getElementById('minimap').style.display = 'block';
+  document.getElementById('joystick').style.display = 'block';
+  document.getElementById('shootBtn').style.display = 'flex';
+  
+  // Показать кнопку выхода для мультиплеера
+  if (currentLocation === 'multiplayer') {
+    document.getElementById('multiExitBtn').style.display = 'block';
+    document.getElementById('onlineIndicator').style.display = 'block';
+  } else {
+    document.getElementById('multiExitBtn').style.display = 'none';
+    document.getElementById('onlineIndicator').style.display = 'none';
+  }
+
+  // Set location enemies seen
+  if (currentLocation === 'murino') { markEnemySeen('pakost'); markEnemySeen('fog_runner'); }
+  else if (currentLocation === 'molochnoe') { markEnemySeen('pavuk'); markEnemySeen('big_pavuk'); }
+  else if (currentLocation === 'multiplayer') { 
+    // В мультиплеере отмечаем всех врагов
+    markEnemySeen('gryaznya'); markEnemySeen('fog_shooter');
+    markEnemySeen('pakost'); markEnemySeen('fog_runner');
+    markEnemySeen('pavuk'); markEnemySeen('big_pavuk');
+  }
+  else { markEnemySeen('gryaznya'); markEnemySeen('fog_shooter'); }
+
+  var stats = getCharStats(currentChar);
+  var ch = characters[currentChar];
+
+  player.x = 400 + Math.random() * (WORLD_W - 800);
+  player.y = 400 + Math.random() * (WORLD_H - 800);
+  player.color = ch.color;
+  player.speed = 3 * stats.speed;
+  player.maxHazard = 100 * stats.hazard;
+  player.hazard = 0; player.score = 0; player.alive = true;
+  player.pushCooldown = 0; player.invisCooldown = 0;
+  player.invisUntil = 0; player.shootCooldown = 0;
+  player.name = playerName;
+
+  sessionScore = 0;
+  zone.r = WORLD_W * 0.48;
+  zone.cx = WORLD_W / 2; zone.cy = WORLD_H / 2;
+  zoneTimer = 0; gameTick = 0;
+
+  spawnCoins(); spawnShowers(); initBots();
+  projectiles = []; aoeExplosions = [];
+
+  cam.x = player.x - canvas.width / 2;
+  cam.y = player.y - canvas.height / 2;
+
+  gameRunning = true;
+  playGameMusic();
+  gameLoop();
+}
+
+// ===== JOYSTICK =====
+let joystickActive = false;
+let joystickDir = { x:0, y:0 };
+let joyStart = { x:0, y:0 };
+
+const joystickEl = document.getElementById('joystick');
+const stickEl    = document.getElementById('stick');
+
+function joyPos(e) {
+  const t = e.touches ? e.touches[0] : e;
+  return { x: t.clientX, y: t.clientY };
+}
+joystickEl.addEventListener('touchstart', e=>{
+  e.preventDefault(); joystickActive=true;
+  const p=joyPos(e); joyStart.x=p.x; joyStart.y=p.y;
+}, {passive:false});
+joystickEl.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  const p=joyPos(e);
+  const dx=p.x-joyStart.x, dy=p.y-joyStart.y;
+  const dist=Math.hypot(dx,dy); const max=40;
+  const nx=dist>max?dx/dist:dx/max;
+  const ny=dist>max?dy/dist:dy/max;
+  joystickDir.x=nx; joystickDir.y=ny;
+  stickEl.style.transform=`translate(calc(-50% + ${nx*30}px), calc(-50% + ${ny*30}px))`;
+}, {passive:false});
+joystickEl.addEventListener('touchend', e=>{
+  e.preventDefault(); joystickActive=false;
+  joystickDir.x=0; joystickDir.y=0;
+  stickEl.style.transform='translate(-50%,-50%)';
+});
+
+// Keyboard
+const keys = {};
+document.addEventListener('keydown', e=>{ keys[e.key]=true; if(e.key===' '||e.key.toLowerCase()==='e') handleAction(); });
+document.addEventListener('keyup', e=>{ keys[e.key]=false; });
+document.getElementById('shootBtn').addEventListener('click', handleAction);
+document.getElementById('shootBtn').addEventListener('touchstart', e=>{ e.preventDefault(); handleAction(); }, {passive:false});
+
+// First touch → start music
+function _firstTouch(){ playMenuMusic(); document.removeEventListener('touchstart',_firstTouch); }
+function _firstClick(){ playMenuMusic(); document.removeEventListener('click',_firstClick); }
+document.addEventListener('touchstart', _firstTouch);
+document.addEventListener('click', _firstClick);
+
+// ===== ACTION =====
+function handleAction() {
+  if (!gameRunning || !player.alive) return;
+  const ch = characters[currentChar];
+
+  if (currentChar==='yakrasny') {
+    if (player.pushCooldown<=0) { pushEnemiesAway(); player.pushCooldown=300; }
+    else showMessage('⏳ '+Math.ceil(player.pushCooldown/60)+'с', 800);
+    return;
+  }
+  if (currentChar==='kyo') {
+    if (player.invisCooldown<=0) { player.invisUntil=Date.now()+5000; player.invisCooldown=900; showMessage('👻 НЕВИДИМОСТЬ 5с!', 2000); }
+    else showMessage('⏳ '+Math.ceil(player.invisCooldown/60)+'с', 800);
+    return;
+  }
+  if (ch.shoot && player.shootCooldown<=0) {
+    shootNearest();
+    player.shootCooldown = currentChar==='bambam'?300:120;
+  } else {
+    checkShower();
+  }
+}
+
+function pushEnemiesAway() {
+  const R=220, F=190;
+  let cnt=0;
+  bots.forEach(b=>{ if(!b.alive)return; const dx=b.x-player.x, dy=b.y-player.y, d=Math.hypot(dx,dy); if(d<R&&d>0){ b.x+=dx/d*F; b.y+=dy/d*F; cnt++; } });
+  showMessage(cnt>0?'🟥 ОТКИНУЛ '+cnt+' врагов!':'🟥 Никого рядом!',1200);
+}
+
+function shootNearest() {
+  let target=null, best=Infinity;
+  bots.forEach(b=>{ if(!b.alive)return; const d=Math.hypot(player.x-b.x, player.y-b.y); if(d<350&&d<best){best=d;target=b;} });
+  if (!target) return;
+  const angle=Math.atan2(target.y-player.y, target.x-player.x);
+  const ch=characters[currentChar];
+  projectiles.push({
+    x:player.x, y:player.y,
+    vx:Math.cos(angle)*5, vy:Math.sin(angle)*5,
+    size:ch.shootType==='aoe'?18:10,
+    color:ch.color, friendly:true, life:70,
+    shootType:ch.shootType, owner:'player',
+    aoeRadius:ch.shootType==='aoe'?90:0
+  });
+}
+
+function checkShower() {
+  if (player.hazard<=0) return;
+  showers.forEach(s=>{
+    if (Math.hypot(player.x-s.x, player.y-s.y) < player.size+s.size) {
+      player.hazard=0; showMessage('🚿 ПОМЫЛСЯ!', 1800);
+    }
+  });
+}
+
+// ===== MAIN LOOP =====
+function gameLoop() {
+  if (!gameRunning) return;
+  gameTick++;
+
+  updatePlayer();
+  updateBots();
+  updateProjectiles();
+  updateCoins();
+  updateZone();
+  replenishCoins();
+  
+  // Симуляция онлайн-активности в мультиплеере
+  if (currentLocation === 'multiplayer' && gameTick % 600 === 0) {
+    simulateOnlineActivity();
+  }
+
+  drawWorld();
+  drawMinimap();
+  updateHUD();
+  updateLeaderboard();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// Симуляция подключения/отключения игроков
+function simulateOnlineActivity() {
+  const rand = Math.random();
+  
+  // 30% шанс что "игрок присоединился"
+  if (rand < 0.3 && bots.length < 50) {
+    const newBot = createBot(bots.length);
+    bots.push(newBot);
+    const joinMessages = [
+      '🟢 ' + newBot.name + ' присоединился',
+      '👋 ' + newBot.name + ' в игре'
+    ];
+    showMessage(joinMessages[Math.floor(Math.random() * joinMessages.length)], 2000);
+  }
+  // 20% шанс что "игрок вышел"
+  else if (rand > 0.7 && bots.length > 25) {
+    const aliveIndex = bots.findIndex(b => b.alive && !b.isEnemy);
+    if (aliveIndex !== -1) {
+      const leftBot = bots[aliveIndex];
+      const leaveMessages = [
+        '🔴 ' + leftBot.name + ' вышел',
+        '👋 ' + leftBot.name + ' покинул игру'
+      ];
+      showMessage(leaveMessages[Math.floor(Math.random() * leaveMessages.length)], 2000);
+      bots.splice(aliveIndex, 1);
+    }
+  }
+}
+
+// ===== UPDATE PLAYER =====
+function updatePlayer() {
+  if (!player.alive) return;
+
+  // Keyboard input
+  if (keys['ArrowLeft']||keys['a']||keys['A']) joystickDir.x=-1;
+  if (keys['ArrowRight']||keys['d']||keys['D']) joystickDir.x=1;
+  if (keys['ArrowUp']||keys['w']||keys['W']) joystickDir.y=-1;
+  if (keys['ArrowDown']||keys['s']||keys['S']) joystickDir.y=1;
+  if (!keys['ArrowLeft']&&!keys['a']&&!keys['A']&&!keys['ArrowRight']&&!keys['d']&&!keys['D']) {
+    if (!joystickActive) joystickDir.x=0;
+  }
+  if (!keys['ArrowUp']&&!keys['w']&&!keys['W']&&!keys['ArrowDown']&&!keys['s']&&!keys['S']) {
+    if (!joystickActive) joystickDir.y=0;
+  }
+
+  const slow = Date.now() < player.invisUntil ? 1 : 1; // no slow for player
+  player.vx = joystickDir.x * player.speed;
+  player.vy = joystickDir.y * player.speed;
+  player.x += player.vx;
+  player.y += player.vy;
+  player.x = Math.max(player.size, Math.min(WORLD_W-player.size, player.x));
+  player.y = Math.max(player.size, Math.min(WORLD_H-player.size, player.y));
+
+  // Cooldowns
+  if (player.pushCooldown>0) player.pushCooldown--;
+  if (player.invisCooldown>0) player.invisCooldown--;
+  if (player.shootCooldown>0) player.shootCooldown--;
+
+  // Hazard
+  const hz = characters[currentChar].hazard;
+  player.hazard += 0.015 * hz;
+
+  // Zone damage
+  const dz = Math.hypot(player.x-zone.cx, player.y-zone.cy);
+  if (dz > zone.r) {
+    player.hazard += 0.5;
+    document.getElementById('zoneWarn').style.display='block';
+  } else {
+    document.getElementById('zoneWarn').style.display='none';
+  }
+
+  player.hazard = Math.min(player.maxHazard, player.hazard);
+  if (player.hazard >= player.maxHazard) { playerDie(); return; }
+
+  // Coins
+  coins.forEach((c,i)=>{
+    if (!c || c._taken) return;
+    if (Math.hypot(player.x-c.x, player.y-c.y) < player.size+c.size) {
+      c._taken = true;
+      if (c.crystal) {
+        totalCrystals++; localStorage.setItem('totalCrystals', totalCrystals);
+        showMessage('💎 +1 кристалл!', 1000);
+      } else {
+        player.score += c.value; sessionScore += c.value;
+        totalEarned += c.value; localStorage.setItem('totalEarned', totalEarned);
+        updatePassProgress(c.value);
+        sfxCoin();
+      }
+    }
+  });
+  coins = coins.filter(c=>!c._taken);
+
+  // Cam
+  cam.x += (player.x - canvas.width/2 - cam.x) * 0.1;
+  cam.y += (player.y - canvas.height/2 - cam.y) * 0.1;
+}
+
+function playerDie() {
+  player.alive = false;
+  gameRunning = false;
+  sfxDie(); stopMusic();
+  document.getElementById('deathStats').innerHTML =
+    '💀 Грязность: 100%<br>💰 Заработано: '+sessionScore.toLocaleString()+' друнблей<br>📊 Позиция: '+(getRank()+1)+' место';
+  hideHUD();
+  document.getElementById('deathScreen').classList.remove('hidden');
+}
+
+function endSession() {
+  gameRunning = false;
+  sfxVictory(); stopMusic();
+  document.getElementById('victoryStats').innerHTML =
+    '🏆 Ты в топе!<br>💰 Заработано: '+sessionScore.toLocaleString()+' друнблей<br>🎮 Всего накоплено: '+totalEarned.toLocaleString();
+  hideHUD();
+  document.getElementById('victoryScreen').classList.remove('hidden');
+}
+
+function getRank() {
+  var allScores = [{isPlayer:true, score:player.score}];
+  bots.forEach(function(b){ if(b.alive) allScores.push({isPlayer:false,score:b.score}); });
+  allScores.sort(function(a,b){return b.score-a.score;});
+  for(var i=0;i<allScores.length;i++){if(allScores[i].isPlayer)return i;}
+  return 0;
+}
+
+// ===== BOTS =====
+function updateBots() {
+  bots.forEach(bot=>{
+    if (!bot.alive) {
+      bot.respawnTimer--;
+      if (bot.respawnTimer<=0) respawnBot(bot);
+      return;
+    }
+
+    const distToPlayer=Math.hypot(bot.x-player.x, bot.y-player.y);
+    
+    // AI поведение в зависимости от типа
+    if (bot.isEnemy && bot.aiType === 'chase') {
+      // Враги-преследователи - гонятся за игроком
+      if (player.alive && Date.now() > player.invisUntil) {
+        const dx = player.x - bot.x;
+        const dy = player.y - bot.y;
+        const d = Math.hypot(dx, dy);
+        if (d > 2) {
+          bot.vx = dx / d * bot.speed;
+          bot.vy = dy / d * bot.speed;
+        }
+      } else {
+        // Случайное движение если игрок невидим
+        bot.vx *= 0.95;
+        bot.vy *= 0.95;
+      }
+    } else if (bot.isEnemy && bot.aiType === 'stationary') {
+      // Стационарные враги - стоят на месте
+      bot.vx *= 0.8;
+      bot.vy *= 0.8;
+    } else {
+      // Обычное поведение ботов - собирают монеты
+      let bestCoin=null, bestDist=Infinity;
+      coins.forEach(c=>{
+        const d=Math.hypot(bot.x-c.x, bot.y-c.y);
+        if (d<bestDist) { bestDist=d; bestCoin=c; }
+      });
+
+      // Check flee from player
+      const flee = player.alive && distToPlayer<150 && Date.now()<player.invisUntil+100;
+
+      let tx=bot.x, ty=bot.y;
+      if (flee) { tx=bot.x+(bot.x-player.x); ty=bot.y+(bot.y-player.y); }
+      else if (bestCoin) { tx=bestCoin.x; ty=bestCoin.y; }
+      else { tx=WORLD_W/2; ty=WORLD_H/2; }
+
+      const dx=tx-bot.x, dy=ty-bot.y, d=Math.hypot(dx,dy);
+      if (d>2) { bot.vx=dx/d*bot.speed; bot.vy=dy/d*bot.speed; }
+      else { bot.vx*=0.9; bot.vy*=0.9; }
+    }
+
+    // Stay in zone
+    const dz=Math.hypot(bot.x-zone.cx, bot.y-zone.cy);
+    if (dz>zone.r-60) {
+      const az=Math.atan2(zone.cy-bot.y, zone.cx-bot.x);
+      bot.vx=Math.cos(az)*bot.speed; bot.vy=Math.sin(az)*bot.speed;
+    }
+
+    bot.x+=bot.vx; bot.y+=bot.vy;
+    bot.x=Math.max(bot.size, Math.min(WORLD_W-bot.size, bot.x));
+    bot.y=Math.max(bot.size, Math.min(WORLD_H-bot.size, bot.y));
+
+    // Collect coins
+    coins.forEach((c,i)=>{
+      if (!c||c._taken) return;
+      if (Math.hypot(bot.x-c.x, bot.y-c.y)<bot.size+c.size) {
+        c._taken=true;
+        bot.score += c.value||100;
+      }
+    });
+    coins=coins.filter(c=>!c._taken);
+
+    // Hazard
+    bot.hazard += 0.02;
+    const dzBot=Math.hypot(bot.x-zone.cx, bot.y-zone.cy);
+    if (dzBot>zone.r) bot.hazard+=0.6;
+    if (bot.hazard>=bot.maxHazard) { botDie(bot); return; }
+
+    // Shower
+    showers.forEach(s=>{
+      if (Math.hypot(bot.x-s.x, bot.y-s.y)<bot.size+s.size) {
+        if (Math.random()<0.02) bot.hazard=0;
+      }
+    });
+
+    // Bot shoot at player
+    if (bot.shoot && distToPlayer<280 && bot.shootCooldown<=0 && player.alive && Date.now()>player.invisUntil) {
+      const angle=Math.atan2(player.y-bot.y, player.x-bot.x);
+      projectiles.push({ x:bot.x, y:bot.y, vx:Math.cos(angle)*4, vy:Math.sin(angle)*4, size:8, color:bot.color, friendly:false, life:60, shootType:'normal', owner:'bot_'+bot.id });
+      bot.shootCooldown=150;
+    }
+    if (bot.shootCooldown>0) bot.shootCooldown--;
+    bot.phase+=0.05;
+  });
+}
+
+function botDie(bot) {
+  bot.alive=false; bot.respawnTimer=300+Math.random()*120;
+  // Drop some coins
+  for (let i=0;i<3;i++) coins.push({ x:bot.x+(Math.random()-.5)*60, y:bot.y+(Math.random()-.5)*60, size:10, value:300+Math.random()*200|0, color:'#FFD700', angle:0 });
+}
+
+function respawnBot(bot) {
+  bot.alive=true; bot.hazard=0; bot.score=Math.floor(bot.score*0.5);
+  bot.x=100+Math.random()*(WORLD_W-200); bot.y=100+Math.random()*(WORLD_H-200);
+}
+
+// ===== PROJECTILES =====
+function updateProjectiles() {
+  projectiles.forEach((p,i)=>{
+    p.x+=p.vx; p.y+=p.vy; p.life--;
+    if (p.life<=0) { projectiles.splice(i,1); return; }
+
+    // Hit player
+    if (!p.friendly && player.alive && Date.now()>player.invisUntil) {
+      if (Math.hypot(p.x-player.x, p.y-player.y)<player.size+p.size) {
+        player.hazard += p.shootType==='aoe'?20:10;
+        projectiles.splice(i,1);
+        showMessage('💥 +грязность!',800);
+        return;
+      }
+    }
+
+    // Hit bots
+    if (p.friendly) {
+      bots.forEach(bot=>{
+        if (!bot.alive) return;
+        if (Math.hypot(p.x-bot.x, p.y-bot.y)<bot.size+p.size) {
+          if (p.shootType==='aoe') {
+            bots.forEach(b2=>{ if(!b2.alive)return; if(Math.hypot(p.x-b2.x,p.y-b2.y)<p.aoeRadius) b2.hazard+=30; });
+            aoeExplosions.push({x:p.x,y:p.y,r:p.aoeRadius,life:20,maxLife:20});
+          } else {
+            bot.hazard+=25;
+          }
+          const idx=projectiles.indexOf(p);
+          if(idx>-1) projectiles.splice(idx,1);
+          showMessage('💥 ПОПАЛ!',600);
+          player.score+=50; sessionScore+=50;
+        }
+      });
+    }
+  });
+}
+
+// ===== ZONE =====
+function updateZone() {
+  zoneTimer++;
+  if (zoneTimer % 600 === 0 && zone.r > zone.minR) {
+    zone.r = Math.max(zone.minR, zone.r - 80);
+    showMessage('⚠️ ЗОНА СУЖАЕТСЯ!', 2500);
+  }
+}
+
+// ===== DRAW =====
+// Tile patterns for map
+const TILE_COLORS = [
+  ['#C8E8B0','#B8D8A0'],  // grass
+  ['#E8D4B0','#D8C4A0'],  // sand
+  ['#B0D0E8','#A0C0D8']   // water border
+];
+
+function drawWorld() {
+  // Full solid background first - prevents black screen on iOS
+  var bgColors = {mytishchi:'#4a8a3a', murino:'#3a3a50', molochnoe:'#3a6030', multiplayer:'#2a5a2a'};
+  ctx.fillStyle = bgColors[currentLocation] || '#4a8a3a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  var cx=cam.x, cy=cam.y;
+
+  // Background tiles
+  const tileX0=Math.floor(cx/TILE)-1, tileY0=Math.floor(cy/TILE)-1;
+  const tileX1=Math.ceil((cx+canvas.width)/TILE)+1;
+  const tileY1=Math.ceil((cy+canvas.height)/TILE)+1;
+
+  for (let tx=tileX0; tx<tileX1; tx++) {
+    for (let ty=tileY0; ty<tileY1; ty++) {
+      const wx=tx*TILE-cx, wy=ty*TILE-cy;
+      const edge = (tx<0||ty<0||tx>=WORLD_W/TILE||ty>=WORLD_H/TILE);
+      const idx = (Math.abs(tx+ty))%2;
+      ctx.fillStyle = edge ? '#607080' : TILE_COLORS[0][idx];
+      ctx.fillRect(wx,wy,TILE,TILE);
+      // grid line
+      ctx.strokeStyle='rgba(0,0,0,0.07)'; ctx.lineWidth=1;
+      ctx.strokeRect(wx,wy,TILE,TILE);
+    }
+  }
+
+  // World border
+  ctx.strokeStyle='rgba(255,50,50,0.8)'; ctx.lineWidth=6;
+  ctx.strokeRect(-cx, -cy, WORLD_W, WORLD_H);
+
+  // Zone circle
+  const zsx=zone.cx-cx, zsy=zone.cy-cy;
+  ctx.strokeStyle='rgba(255,0,100,0.7)'; ctx.lineWidth=4;
+  ctx.setLineDash([16,10]);
+  ctx.beginPath(); ctx.arc(zsx,zsy,zone.r,0,Math.PI*2); ctx.stroke();
+  ctx.setLineDash([]);
+  // Zone darken outside
+  ctx.save();
+  ctx.fillStyle='rgba(0,0,0,0.32)';
+  ctx.beginPath(); ctx.rect(0,0,canvas.width,canvas.height);
+  ctx.arc(zsx,zsy,zone.r,0,Math.PI*2,true); ctx.fill();
+  ctx.restore();
+
+  // Showers
+  showers.forEach(s=>{
+    const sx=s.x-cx, sy=s.y-cy;
+    if (sx<-50||sx>canvas.width+50||sy<-50||sy>canvas.height+50) return;
+    ctx.fillStyle='rgba(0,180,255,0.25)';
+    ctx.beginPath(); ctx.arc(sx,sy,s.size+8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#A0D4FF'; ctx.beginPath(); ctx.arc(sx,sy,s.size,0,Math.PI*2); ctx.fill();
+    ctx.font='22px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🚿',sx,sy);
+  });
+
+  // Coins
+  coins.forEach(c=>{
+    const sx=c.x-cx, sy=c.y-cy;
+    if (sx<-20||sx>canvas.width+20||sy<-20||sy>canvas.height+20) return;
+    c.angle+=0.06;
+    const sc=1+Math.sin(c.angle)*0.12;
+    ctx.save(); ctx.translate(sx,sy); ctx.scale(sc,sc);
+    ctx.fillStyle=c.crystal?'#00FFFF':'#FFD700';
+    ctx.shadowColor=c.crystal?'rgba(0,255,255,0.8)':'rgba(255,215,0,0.6)';
+    ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.arc(0,0,c.size,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.font='bold 10px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(c.crystal?'💎':'₽',0,1);
+    ctx.shadowBlur=0; ctx.restore();
+  });
+
+  // AOE explosions
+  aoeExplosions.forEach((e,i)=>{
+    const prog=1-e.life/e.maxLife;
+    const r=e.r*(0.3+0.7*prog);
+    ctx.globalAlpha=(1-prog)*0.7;
+    const g=ctx.createRadialGradient(e.x-cx,e.y-cy,0,e.x-cx,e.y-cy,r);
+    g.addColorStop(0,'#FFF'); g.addColorStop(0.3,'#FF8C00'); g.addColorStop(1,'rgba(255,60,0,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(e.x-cx,e.y-cy,r,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=1; e.life--;
+    if (e.life<=0) aoeExplosions.splice(i,1);
+  });
+
+  // Bots
+  bots.forEach(bot=>{
+    if (!bot.alive) return;
+    const sx=bot.x-cx, sy=bot.y-cy;
+    if (sx<-60||sx>canvas.width+60||sy<-60||sy>canvas.height+60) return;
+    drawEntity(sx,sy,bot.size,bot.color, bot.name, bot.score, bot.hazard/bot.maxHazard, false);
+  });
+
+  // Projectiles
+  projectiles.forEach(p=>{
+    const sx=p.x-cx, sy=p.y-cy;
+    ctx.fillStyle=p.color; ctx.globalAlpha=0.85;
+    ctx.beginPath(); ctx.arc(sx,sy,p.size,0,Math.PI*2); ctx.fill();
+    ctx.globalAlpha=1;
+  });
+
+  // Player
+  if (player.alive) {
+    const isInvis = Date.now()<player.invisUntil;
+    const sx=player.x-cx, sy=player.y-cy;
+    if (isInvis) ctx.globalAlpha=0.4;
+    drawEntity(sx,sy,player.size,player.color, player.name, player.score, player.hazard/player.maxHazard, true);
+    ctx.globalAlpha=1;
+  }
+
+  // Minimap label
+  ctx.fillStyle='rgba(0,0,0,0.0)';
+}
+
+function drawEntity(sx,sy,size,color,name,score,hazardPct,isPlayer) {
+  // Shadow glow
+  ctx.shadowColor=color; ctx.shadowBlur=isPlayer?18:10;
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.arc(sx,sy,size,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
+
+  // Border
+  ctx.strokeStyle=isPlayer?'#FFD700':'rgba(255,255,255,0.6)';
+  ctx.lineWidth=isPlayer?3:2;
+  ctx.beginPath(); ctx.arc(sx,sy,size,0,Math.PI*2); ctx.stroke();
+
+  // Name label
+  ctx.fillStyle='rgba(0,0,0,0.6)';
+  const tw=ctx.measureText(name).width;
+  ctx.fillRect(sx-tw/2-4,sy-size-22,tw+8,16);
+  ctx.fillStyle=isPlayer?'#FFD700':'#FFF';
+  ctx.font='bold 11px Varela Round, sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(name,sx,sy-size-14);
+
+  // Score
+  ctx.fillStyle='rgba(255,215,0,0.9)'; ctx.font='10px Varela Round,sans-serif';
+  ctx.fillText('💰'+score,sx,sy-size-4);
+
+  // Hazard bar
+  const bw=size*2.2, bh=5;
+  ctx.fillStyle='rgba(0,0,0,0.5)';
+  ctx.fillRect(sx-bw/2,sy+size+4,bw,bh);
+  ctx.fillStyle=hazardPct>0.7?'#FF4444':hazardPct>0.4?'#FFAA00':'#44FF88';
+  ctx.fillRect(sx-bw/2,sy+size+4,bw*hazardPct,bh);
+}
+
+// ===== MINIMAP =====
+function drawMinimap() {
+  const mw=mmCv.width, mh=mmCv.height;
+  mmCtx.fillStyle='rgba(0,20,40,0.85)';
+  mmCtx.fillRect(0,0,mw,mh);
+
+  const sx=mw/WORLD_W, sy=mh/WORLD_H;
+
+  // Zone
+  mmCtx.strokeStyle='rgba(255,0,100,0.7)'; mmCtx.lineWidth=1.5;
+  mmCtx.beginPath(); mmCtx.arc(zone.cx*sx, zone.cy*sy, zone.r*sx, 0, Math.PI*2); mmCtx.stroke();
+
+  // Coins
+  coins.forEach(c=>{
+    mmCtx.fillStyle='#FFD700';
+    mmCtx.fillRect(c.x*sx-1,c.y*sy-1,2,2);
+  });
+
+  // Bots
+  bots.forEach(b=>{
+    if (!b.alive) return;
+    mmCtx.fillStyle=b.color;
+    mmCtx.beginPath(); mmCtx.arc(b.x*sx,b.y*sy,2,0,Math.PI*2); mmCtx.fill();
+  });
+
+  // Player
+  if (player.alive) {
+    mmCtx.fillStyle='#FFD700';
+    mmCtx.strokeStyle='#FFF'; mmCtx.lineWidth=1.5;
+    mmCtx.beginPath(); mmCtx.arc(player.x*sx,player.y*sy,3.5,0,Math.PI*2);
+    mmCtx.fill(); mmCtx.stroke();
+  }
+}
+
+// ===== HUD =====
+function updateHUD() {
+  var ch=characters[currentChar];
+  var hazardName = LOC_HAZARD[currentLocation] || 'Грязность';
+  document.getElementById('hudScore').textContent = '\uD83D\uDCB0 '+player.score.toLocaleString();
+  var hp=Math.min(100,((player.hazard/player.maxHazard)*100).toFixed(0));
+  document.getElementById('hudHazard').textContent = hazardName+': '+hp+'%';
+  document.getElementById('hudChar').textContent = (charEmoji[currentChar]||'\uD83D\uDE0A')+' '+ch.name;
+  document.getElementById('hazardFill').style.width = hp+'%';
+  document.getElementById('hazardFill').style.background = hp>70?'linear-gradient(90deg,#FF4444,#FF0000)':hp>40?'linear-gradient(90deg,#FFAA00,#FF6600)':'linear-gradient(90deg,#00D4FF,#44FF88)';
+}
+
+// ===== LEADERBOARD =====
+function updateLeaderboard() {
+  var allEntries = [{name:player.name, score:player.score, isMe:true}];
+  bots.forEach(function(b){ if(b.alive) allEntries.push({name:b.name,score:b.score,isMe:false}); });
+  var all = allEntries.sort(function(a,b2){return b2.score-a.score;}).slice(0,8);
+
+  const el=document.getElementById('lbList');
+  el.innerHTML = all.map((e,i)=>
+    `<div class="lb-row${e.isMe?' me':''}">
+      <span>${i+1}. ${e.name}</span>
+      <span>💰${e.score.toLocaleString()}</span>
+    </div>`
+  ).join('');
+
+  // Auto end if player is top for 30s
+  if (gameTick === 60*90 && player.alive) endSession();
+}
+
+// ===== SCREENS =====
+function hideAllScreens() {
+  ['startScreen','shopScreen','chestScreen','passScreen','almanacScreen','deathScreen','victoryScreen','keySelectOverlay'].forEach(id=>{
+    const el=document.getElementById(id);
+    if (el) { el.style.display=''; el.classList.add('hidden'); }
+  });
+}
+function hideHUD() {
+  ['hud','hazardBar','leaderboard','minimap','joystick','shootBtn'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.style.display='none';
+  });
+}
+function showStart() {
+  hideHUD(); gameRunning=false; stopMusic();
+  hideAllScreens();
+  var s=document.getElementById('startScreen');
+  s.classList.remove('hidden'); s.style.display='flex';
+  document.getElementById('charNameDisplay').textContent = characters[currentChar].name;
+  document.getElementById('charNameDisplay').style.color = characters[currentChar].color;
+  var ni=document.getElementById('playerName');
+  if (ni && playerName) ni.value=playerName;
+  updateLocationButtons();
+  playMenuMusic();
+}
+
+function exitMultiplayer() {
+  if (currentLocation !== 'multiplayer') return;
+  gameRunning = false;
+  showMessage('🚪 Выход из мультиплеера...', 2000);
+  setTimeout(function() {
+    showStart();
+  }, 1000);
+}
+
+function showMessage(text, dur=2500) {
+  const m=document.getElementById('message');
+  m.textContent=text; m.classList.add('show');
+  clearTimeout(m._t); m._t=setTimeout(()=>m.classList.remove('show'),dur);
+}
+
+// ===== SHOP =====
+let _shopFrom='start';
+function openShop(from) {
+  _shopFrom=from||'start'; sfxClick();
+  hideAllScreens();
+  document.getElementById('shopBalance').textContent=totalEarned.toLocaleString();
+  document.getElementById('shopCrystals').textContent=totalCrystals.toLocaleString();
+  renderShop();
+  const s=document.getElementById('shopScreen');
+  s.classList.remove('hidden'); s.style.display='flex';
+}
+function closeShop() {
+  document.getElementById('shopScreen').classList.add('hidden');
+  if (_shopFrom==='death') { document.getElementById('deathScreen').classList.remove('hidden'); document.getElementById('deathScreen').style.display='flex'; }
+  else if (_shopFrom==='victory') { document.getElementById('victoryScreen').classList.remove('hidden'); document.getElementById('victoryScreen').style.display='flex'; }
+  else showStart();
+}
+function renderShop() {
+  const grid=document.getElementById('charGrid'); grid.innerHTML='';
+  Object.keys(characters).forEach(id=>{
+    const ch=characters[id];
+    const owned=unlocked.includes(id), sel=currentChar===id;
+    const lv=getCharLevel(id), stats=getCharStats(id);
+    const rc=rarityColors[ch.rarity]||'#FFF';
+    const pct=Math.round(lv/3*100);
+    const barCol=lv>=3?'#FFD700':'#00D4FF';
+    const lockedM=ch.murinoOnly&&!murinoUnlocked&&!owned;
+    const lockedMo=ch.molochnoeOnly&&!molochnoeUnlocked&&!owned;
+
+    let btnHTML='';
+    if (lockedM) btnHTML='<button class="btn btn-sm" disabled style="width:100%;background:#333;border-color:#555;color:#888;">🌫️ Мурино</button>';
+    else if (lockedMo) btnHTML='<button class="btn btn-sm" disabled style="width:100%;background:#333;border-color:#555;color:#888;">🕸️ Молочное</button>';
+    else if (!owned&&ch.cost>0) {
+      const canB=totalEarned>=ch.cost;
+      btnHTML=`<button class="btn btn-sm${canB?' btn-gold':''}" ${!canB?'disabled':''} onclick="buyChar('${id}')" style="width:100%;">${canB?'💰 КУПИТЬ':'🔒 '+ch.cost.toLocaleString()}</button>`;
+    } else if (sel) {
+      btnHTML='<button class="btn btn-sm btn-red" onclick="startGame()" style="width:100%;">⚔️ В БОЙ!</button>';
+    } else if (owned) {
+      btnHTML=`<button class="btn btn-sm btn-green" onclick="selectChar('${id}')" style="width:100%;">✓ ВЫБРАТЬ</button>`;
+    }
+
+    const card=document.createElement('div');
+    card.className='char-card'+(sel?' selected':owned?' owned':'');
+    card.innerHTML=
+      (sel?'<div class="char-badge" style="background:#FFD700;color:#000;">✓ ВЫБРАН</div>':'')+(
+      !owned&&!lockedM&&!lockedMo?'<div class="char-badge" style="background:#F00;color:#FFF;">🔒</div>':'')+
+      `<div style="font-size:36px;margin:6px 0;">${charEmoji[id]||'?'}</div>`+
+      `<div style="font-size:15px;font-weight:bold;color:${ch.color};">${ch.name}</div>`+
+      `<div style="font-size:10px;font-weight:bold;color:${rc};letter-spacing:1px;text-transform:uppercase;margin:3px 0;">✦ ${ch.rarity} ✦</div>`+
+      `<div style="font-size:11px;color:rgba(255,255,255,0.75);">⚡${(stats.speed*100).toFixed(0)}%  🛡️${(stats.hazard*100).toFixed(0)}%</div>`+
+      (owned?
+        `<div style="margin:6px 2px 0;">
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,0.6);margin-bottom:2px;"><span>Прокачка</span><span style="color:${barCol};">${lv}/3</span></div>
+          <div class="char-level-bar"><div class="char-level-fill" style="width:${pct}%;background:${barCol};"></div></div>
+          <div style="font-size:9px;color:rgba(255,255,255,0.45);margin-top:2px;text-align:center;">${lv>=3?'🏆 МАКСИМУМ':'📦 ещё '+(3-lv)+' до макс'}</div>
+        </div>`:'') +
+      `<div style="margin-top:8px;">${btnHTML}</div>`;
+    grid.appendChild(card);
+  });
+}
+function buyChar(id) {
+  const ch=characters[id];
+  if (totalEarned>=ch.cost&&!unlocked.includes(id)) {
+    unlocked.push(id); charLevels[id]=1;
+    totalEarned-=ch.cost;
+    localStorage.setItem('unlocked',JSON.stringify(unlocked));
+    localStorage.setItem('charLevels',JSON.stringify(charLevels));
+    localStorage.setItem('totalEarned',totalEarned);
+    updatePassProgress(ch.cost);
+    showMessage('🎉 '+ch.name+' куплен!',2000); sfxVictory(); renderShop();
+  }
+}
+function selectChar(id) {
+  currentChar=id; localStorage.setItem('currentChar',id);
+  const stats=getCharStats(id); const ch=characters[id];
+  player.color=ch.color; player.speed=3*stats.speed; player.maxHazard=100*stats.hazard;
+  renderShop();
+  document.getElementById('charNameDisplay').textContent=ch.name;
+  document.getElementById('charNameDisplay').style.color=ch.color;
+  showMessage('✓ '+ch.name+' выбран!',1500);
+}
+
+// ===== CHESTS =====
+function openChests(from) {
+  _chestFrom=from||'start'; sfxClick();
+  hideAllScreens();
+  document.getElementById('chestBalance').textContent=totalEarned.toLocaleString();
+  document.getElementById('crystalBalance').textContent=totalCrystals.toLocaleString();
+  renderChests();
+  const s=document.getElementById('chestScreen');
+  s.classList.remove('hidden'); s.style.display='flex';
+}
+function closeChests() {
+  document.getElementById('chestScreen').classList.add('hidden');
+  if (_chestFrom==='death') { document.getElementById('deathScreen').classList.remove('hidden'); document.getElementById('deathScreen').style.display='flex'; }
+  else if (_chestFrom==='victory') { document.getElementById('victoryScreen').classList.remove('hidden'); document.getElementById('victoryScreen').style.display='flex'; }
+  else showStart();
+}
+function renderChests() {
+  document.getElementById('chestBalance').textContent=totalEarned.toLocaleString();
+  document.getElementById('crystalBalance').textContent=totalCrystals.toLocaleString();
+  const grid=document.getElementById('chestGrid'); grid.innerHTML='';
+  Object.values(chestTypes).forEach(chest=>{
+    const locM=chest.murinoOnly&&!murinoUnlocked;
+    const locMo=chest.molochnoeOnly&&!molochnoeUnlocked;
+    const locked=locM||locMo;
+    const canBuy=!locked&&(chest.crystalCost?totalCrystals>=chest.cost:totalEarned>=chest.cost);
+    let rewardLines='';
+    RARITIES.forEach(rar=>{
+      const pool=(charsByRarity[rar]||[]).filter(id=>canCharDrop(id));
+      if (pool.length) {
+        rewardLines+=`<div style="font-size:10px;color:${rarityColors[rar]};margin:2px 0;">✦ ${rar}:</div>`;
+        pool.forEach(id=>{
+          const lv=getCharLevel(id), pct=Math.round(lv/3*100), bc=lv>=3?'#FFD700':rarityColors[rar];
+          rewardLines+=`<div style="margin:1px 0;font-size:9px;display:flex;justify-content:space-between;"><span>${characters[id].name}</span><span style="color:${bc};">${lv}/3</span></div>
+          <div style="background:rgba(255,255,255,0.1);border-radius:3px;height:4px;margin-bottom:2px;"><div style="width:${pct}%;height:100%;background:${bc};border-radius:3px;"></div></div>`;
+        });
+      }
+    });
+    if (!rewardLines) rewardLines='<div style="font-size:10px;color:#888;">Все на максимуме!</div>';
+
+    const card=document.createElement('div');
+    card.className='chest-card';
+    if (locked) {
+      card.style.opacity='0.5';
+      card.innerHTML=`<div style="font-size:52px;margin:6px 0;filter:grayscale(0.7);">${chest.emoji}</div>
+      <div style="font-family:Righteous,cursive;font-size:18px;color:#ccc;">${chest.name}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin:8px 0;">${chest.desc.replace(/\n/g,'<br>')}</div>
+      <button disabled class="btn btn-sm" style="width:100%;background:#333;border-color:#555;color:#888;">🔒 ${locM?'Мурино':'Молочное'}</button>`;
+    } else {
+      const costLabel=chest.crystalCost?chest.cost+' 💎':chest.cost.toLocaleString()+' 💰';
+      card.innerHTML=`<div style="font-size:52px;margin:6px 0;">${chest.emoji}</div>
+      <div style="font-family:Righteous,cursive;font-size:18px;color:#fff;">${chest.name}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.6);margin:6px 0;">${chest.desc.replace(/\n/g,'<br>')}</div>
+      <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:6px;margin:8px 0;max-height:120px;overflow-y:auto;">${rewardLines}</div>
+      <button class="btn btn-sm btn-gold" ${!canBuy?'disabled':''} onclick="buyAndOpenChest('${chest.id}')" style="width:100%;${!canBuy?'background:#555;':''}">
+        ${canBuy?chest.emoji+' ОТКРЫТЬ':'🔒'} — ${costLabel}
+      </button>`;
+    }
+    grid.appendChild(card);
+  });
+}
+function buyAndOpenChest(typeId) {
+  const chest=chestTypes[typeId];
+  if (chest.crystalCost) { if(totalCrystals<chest.cost){showMessage('💎 Мало кристаллов!',1500);return;} totalCrystals-=chest.cost; localStorage.setItem('totalCrystals',totalCrystals); }
+  else { if(totalEarned<chest.cost){showMessage('💰 Мало друнблей!',1500);return;} totalEarned-=chest.cost; localStorage.setItem('totalEarned',totalEarned); updatePassProgress(chest.cost); }
+  chestState.active=true; chestState.type=typeId; chestState.rarity='Обычность'; chestState.tapsLeft=chest.tapsNeeded; chestState.fromScreen=_chestFrom;
+  updateChestUI();
+  document.getElementById('chestScreen').style.display='none';
+  document.getElementById('chestOpenOverlay').classList.add('active');
+  stopBubbleAnim(); animateBubble();
+}
+
+// ===== BUBBLE CANVAS =====
+const bubbleCv=document.getElementById('bubbleCanvas'); const bCtx=bubbleCv.getContext('2d');
+let bubAnim=0, bubFrame=null;
+function stopBubbleAnim(){if(bubFrame){cancelAnimationFrame(bubFrame);bubFrame=null;}}
+function animateBubble(){bubAnim+=0.04;drawBubble(chestState.rarity,false);bubFrame=requestAnimationFrame(animateBubble);}
+function updateChestUI(){
+  const rl=document.getElementById('chestRarityLabel');
+  rl.textContent=chestState.rarity; rl.style.color=rarityColors[chestState.rarity]; rl.style.textShadow='0 0 20px '+rarityColors[chestState.rarity];
+  const t=chestState.tapsLeft;
+  document.getElementById('chestTapsLeft').textContent=t===1?'Последний удар!':'Нажми ещё '+t+' раз';
+}
+bubbleCv.addEventListener('click',tapBubble);
+bubbleCv.addEventListener('touchstart',e=>{e.preventDefault();tapBubble();},{passive:false});
+function tapBubble(){
+  if(!chestState.active||chestState.tapsLeft<=0)return;
+  sfxChestTap();
+  const chest=chestTypes[chestState.type];
+  drawBubble(chestState.rarity,true); setTimeout(()=>drawBubble(chestState.rarity,false),120);
+  const ri=RARITIES.indexOf(chestState.rarity);
+  if(ri<RARITIES.length-1&&Math.random()<chest.upgradeChance){
+    chestState.rarity=RARITIES[ri+1]; sfxRarityUp();
+    const rl=document.getElementById('chestRarityLabel');
+    rl.classList.remove('rarity-flash'); void rl.offsetWidth; rl.classList.add('rarity-flash');
+    updateChestUI();
+  }
+  chestState.tapsLeft--;
+  updateChestUI();
+  if(chestState.tapsLeft<=0){chestState.tapsLeft=0;setTimeout(openChestResult,200);}
+}
+function openChestResult(){
+  stopBubbleAnim();
+  bubbleCv.classList.add('bubble-popping');
+  setTimeout(()=>{
+    bubbleCv.classList.remove('bubble-popping');
+    document.getElementById('chestOpenOverlay').classList.remove('active');
+    const rarity=chestState.rarity;
+    const pool=(charsByRarity[rarity]||[]).filter(id=>canCharDrop(id)&&(characters[id].murinoOnly?murinoUnlocked:true)&&(characters[id].molochnoeOnly?molochnoeUnlocked:true));
+    const wonId=pool.length>0&&Math.random()<0.5?pool[Math.floor(Math.random()*pool.length)]:null;
+    showChestResult(rarity,wonId);
+  },380);
+}
+function showChestResult(rarity,charId){
+  const color=rarityColors[rarity]; const rb=document.getElementById('resultBox');
+  rb.style.border='3px solid '+color; rb.style.boxShadow='0 0 40px '+rarityGlow[rarity];
+  if(charId){
+    sfxChestOpen(); const ch=characters[charId];
+    const oldLv=getCharLevel(charId); const newLv=upgradeChar(charId);
+    if(!unlocked.includes(charId)){unlocked.push(charId);localStorage.setItem('unlocked',JSON.stringify(unlocked));}
+    const fs=getCharStats(charId);
+    document.getElementById('resultEmoji').textContent=charEmoji[charId];
+    document.getElementById('resultName').textContent=ch.name; document.getElementById('resultName').style.color=ch.color;
+    const re=document.getElementById('resultRarity');
+    re.textContent=(newLv===1&&oldLv===0)?'✦ '+rarity+' ✦ ОТКРЫТ!':(newLv===2?'✦ '+rarity+' ✦ УЛУЧШЕН! (1/2)':'✦ '+rarity+' ✦ 🏆 МАКСИМУМ!');
+    re.style.color=color;
+    const pp=Math.round(newLv/3*100), bc=newLv>=3?'#FFD700':'#00D4FF';
+    document.getElementById('resultDesc').innerHTML=
+      `<div style="margin:8px 0;"><div style="display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:4px;"><span>Прокачка</span><span style="color:${bc};">${newLv}/3</span></div>
+      <div style="background:rgba(255,255,255,0.2);border-radius:7px;height:10px;overflow:hidden;"><div style="width:${pp}%;height:100%;background:${bc};border-radius:7px;box-shadow:0 0 7px ${bc};"></div></div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.5);margin-top:3px;text-align:center;">${newLv>=3?'🏆 МАКСИМУМ! +20% к характеристикам':'📦 ещё '+(3-newLv)+' выбить'}</div></div>
+      <div style="color:rgba(255,255,255,0.7);font-size:12px;">⚡${(fs.speed*100).toFixed(0)}%  🛡️${(fs.hazard*100).toFixed(0)}%${ch.shoot?'  🔫':''}${newLv===3?'<br>🏆 +20% к харак.':''}</div>`;
+  } else {
+    sfxChestEmpty();
+    document.getElementById('resultEmoji').textContent='💨';
+    document.getElementById('resultName').textContent='ПУСТО'; document.getElementById('resultName').style.color='rgba(255,255,255,0.6)';
+    document.getElementById('resultRarity').textContent='✦ '+rarity+' ✦'; document.getElementById('resultRarity').style.color=color;
+    document.getElementById('resultDesc').textContent='В этот раз ничего не выпало...';
+  }
+  document.getElementById('chestResultOverlay').classList.add('active');
+}
+function closeResult(){
+  document.getElementById('chestResultOverlay').classList.remove('active');
+  chestState.active=false;
+  if(chestState.fromScreen==='pass'){openPass(_passFrom);}
+  else{openChests(chestState.fromScreen);}
+}
+function cancelChestOpen(){
+  stopBubbleAnim(); chestState.active=false;
+  document.getElementById('chestOpenOverlay').classList.remove('active');
+  if(chestState.fromScreen==='pass') openPass(_passFrom);
+  else openChests(chestState.fromScreen);
+}
+function drawBubble(rarity,shake){
+  const w=bubbleCv.width,h=bubbleCv.height; bCtx.clearRect(0,0,w,h);
+  const cx=w/2+(shake?(Math.random()-.5)*14:0), cy=h/2+(shake?(Math.random()-.5)*14:0), r=100;
+  const color=rarityColors[rarity], glow=rarityGlow[rarity];
+  const gg=bCtx.createRadialGradient(cx,cy,r*.5,cx,cy,r*1.6);
+  gg.addColorStop(0,glow); gg.addColorStop(1,'transparent');
+  bCtx.fillStyle=gg; bCtx.beginPath(); bCtx.arc(cx,cy,r*1.6,0,Math.PI*2); bCtx.fill();
+  const t=bubAnim;
+  const isDym=chestState.type==='dymnost';
+  if(isDym){
+    for(let i=0;i<6;i++){
+      const a=(i/6)*Math.PI*2+t*.5,ox=Math.cos(a)*r*.28,oy=Math.sin(a)*r*.28,pr=r*.52+6*Math.sin(t*.9+i*1.2);
+      const pg=bCtx.createRadialGradient(cx+ox,cy+oy,0,cx+ox,cy+oy,pr);
+      pg.addColorStop(0,'rgba(180,180,200,0.55)'); pg.addColorStop(1,'rgba(0,0,0,0)');
+      bCtx.fillStyle=pg; bCtx.beginPath(); bCtx.arc(cx+ox,cy+oy,pr,0,Math.PI*2); bCtx.fill();
+    }
+  } else {
+    const gr=bCtx.createRadialGradient(cx-r*.3,cy-r*.3,r*.05,cx,cy,r);
+    gr.addColorStop(0,'rgba(255,255,255,0.55)');
+    gr.addColorStop(0.4,'rgba(100,160,220,0.3)');
+    gr.addColorStop(1,'rgba(0,0,0,0)');
+    bCtx.fillStyle=gr;
+    bCtx.beginPath(); bCtx.arc(cx,cy,r,0,Math.PI*2); bCtx.fill();
+    bCtx.strokeStyle=color; bCtx.lineWidth=3; bCtx.globalAlpha=.7;
+    bCtx.beginPath(); bCtx.arc(cx,cy,r,0,Math.PI*2); bCtx.stroke(); bCtx.globalAlpha=1;
+  }
+  bCtx.font='44px Arial'; bCtx.textAlign='center'; bCtx.textBaseline='middle';
+  bCtx.fillText(isDym?'🌫️':'🫧',cx,cy);
+}
+
+// ===== PASS =====
+let _passFrom='start';
+function openPass(from){
+  _passFrom=from||'start'; sfxClick(); hideAllScreens();
+  document.getElementById('passCurrentTier').textContent=passTier;
+  renderPass();
+  const s=document.getElementById('passScreen'); s.classList.remove('hidden'); s.style.display='flex';
+}
+function closePass(){
+  document.getElementById('passScreen').classList.add('hidden');
+  if(_passFrom==='death'){document.getElementById('deathScreen').classList.remove('hidden');document.getElementById('deathScreen').style.display='flex';}
+  else if(_passFrom==='victory'){document.getElementById('victoryScreen').classList.remove('hidden');document.getElementById('victoryScreen').style.display='flex';}
+  else showStart();
+}
+function renderPass(){
+  document.getElementById('passCurrentTier').textContent=passTier;
+  const grid=document.getElementById('passGrid'); grid.innerHTML='';
+  for(let tier=1;tier<=60;tier++){
+    const reward=getPassTierReward(tier); if(!reward) continue;
+    const isUnlocked=tier<=passTier, isClaimed=passRewards.includes(tier);
+    const tierCost=getPassTierCost(tier-1);
+    const card=document.createElement('div');
+    card.style.cssText=`background:${isUnlocked&&!isClaimed?'rgba(0,212,255,0.25)':isUnlocked?'rgba(0,212,255,0.1)':'rgba(0,0,0,0.4)'};border:3px solid ${isUnlocked&&!isClaimed?'#FFD700':isUnlocked?'#00D4FF':'rgba(255,255,255,0.15)'};border-radius:14px;padding:14px;text-align:center;position:relative;opacity:${isUnlocked?1:.45};${isUnlocked&&!isClaimed?'cursor:pointer;box-shadow:0 0 18px rgba(255,215,0,0.4);':''}`;
+    if(isUnlocked&&!isClaimed){
+      const isKey=reward.type==='key';
+      card.onclick=()=>{ if(isKey) claimKeyReward(tier,reward.rarity); else claimChestReward(tier,reward.chest); };
+    }
+    let statusHTML='';
+    if(isUnlocked&&!isClaimed) statusHTML='<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,215,0,0.92);color:#000;padding:8px 16px;border-radius:14px;font-size:13px;font-weight:bold;">ЗАБЕРИ!</div>';
+    else if(isClaimed) statusHTML='<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,200,0,0.8);color:#fff;padding:6px 14px;border-radius:12px;font-size:12px;font-weight:bold;">✓ ПОЛУЧЕНО</div>';
+    else if(!isUnlocked) statusHTML=`<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.7);color:#888;padding:6px 14px;border-radius:12px;font-size:12px;">🔒 ${tierCost.toLocaleString()}</div>`;
+    card.innerHTML=`<div style="position:absolute;top:6px;left:8px;background:rgba(0,0,0,0.6);color:#FFD700;padding:2px 8px;border-radius:7px;font-size:11px;font-weight:bold;">Тир ${tier}</div>
+    <div style="font-size:52px;margin:18px 0 8px;${isClaimed?'opacity:.25':''}">${reward.emoji}</div>
+    <div style="font-size:14px;font-weight:bold;color:${reward.type==='key'?'#FFD700':'#00D4FF'};${isClaimed?'opacity:.4':''}">${reward.name}</div>
+    ${statusHTML}`;
+    grid.appendChild(card);
+  }
+}
+function claimChestReward(tier,chestType){
+  if(!passRewards.includes(tier)){passRewards.push(tier);localStorage.setItem('passRewards',JSON.stringify(passRewards));}
+  chestState.active=true; chestState.type=chestType; chestState.rarity='Обычность';
+  chestState.tapsLeft=chestTypes[chestType].tapsNeeded; chestState.fromScreen='pass';
+  updateChestUI();
+  document.getElementById('passScreen').style.display='none';
+  document.getElementById('chestOpenOverlay').classList.add('active');
+  stopBubbleAnim(); animateBubble();
+}
+function claimKeyReward(tier,rarity){
+  document.getElementById('passScreen').style.display='none';
+  openKeySelect(tier,rarity);
+}
+let _keyTier=0,_keyRarity='';
+function openKeySelect(tier,rarity){
+  _keyTier=tier; _keyRarity=rarity;
+  const emoji=rarity==='Обычность'?'🔑':rarity==='Редкость'?'🗝️':'🔐';
+  document.getElementById('keySelectTitle').textContent=emoji+' '+rarity.toUpperCase()+' КЛЮЧ';
+  const grid=document.getElementById('keyCharGrid'); grid.innerHTML='';
+  const avail=charsByRarity[rarity].filter(id=>canCharDrop(id));
+  if(!avail.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,0.7);padding:20px;">Все персонажи этой редкости на МАКСИМУМ!</div>';
+  } else {
+    avail.forEach(id=>{
+      const ch=characters[id],lv=getCharLevel(id),own=unlocked.includes(id);
+      const card=document.createElement('div');
+      card.style.cssText=`background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(255,107,157,0.15));border:3px solid ${ch.color};border-radius:14px;padding:12px;text-align:center;cursor:pointer;position:relative;`;
+      card.onclick=()=>selectCharWithKey(id);
+      card.innerHTML=(own?`<div class="char-badge" style="background:rgba(255,215,0,0.9);color:#000;">${lv}/3</div>`:'')+
+        `<div style="font-size:42px;margin:6px 0;">${charEmoji[id]}</div>
+        <div style="font-size:15px;font-weight:bold;color:${ch.color};">${ch.name}</div>
+        <div style="font-size:11px;color:${own?'#FFD700':'#4FC3F7'};margin-top:4px;">${own?'⬆️ УЛУЧШИТЬ':'🆕 ОТКРЫТЬ'}</div>`;
+      grid.appendChild(card);
+    });
+  }
+  const s=document.getElementById('keySelectOverlay'); s.classList.remove('hidden'); s.style.display='flex';
+}
+function closeKeySelect(){
+  document.getElementById('keySelectOverlay').classList.add('hidden');
+  openPass(_passFrom);
+}
+function selectCharWithKey(charId){
+  const oldLv=getCharLevel(charId),newLv=upgradeChar(charId);
+  if(!unlocked.includes(charId)){unlocked.push(charId);localStorage.setItem('unlocked',JSON.stringify(unlocked));}
+  if(!passRewards.includes(_keyTier)){passRewards.push(_keyTier);localStorage.setItem('passRewards',JSON.stringify(passRewards));}
+  const msg=newLv===1&&oldLv===0?'🎉 '+characters[charId].name+' получен!':newLv===2?'⬆️ '+characters[charId].name+' улучшен! (1/2)':'🏆 '+characters[charId].name+' МАКСИМУМ!';
+  showMessage(msg,3000); sfxVictory(); closeKeySelect();
+}
+
+// ===== ALMANAC =====
+let _almFrom='start';
+function openAlmanac(from){
+  _almFrom=from||'start'; sfxClick(); hideAllScreens();
+  renderAlmanac();
+  const s=document.getElementById('almanacScreen'); s.classList.remove('hidden'); s.style.display='flex';
+}
+function closeAlmanac(){
+  document.getElementById('almanacScreen').classList.add('hidden');
+  if(_almFrom==='death'){document.getElementById('deathScreen').classList.remove('hidden');document.getElementById('deathScreen').style.display='flex';}
+  else if(_almFrom==='victory'){document.getElementById('victoryScreen').classList.remove('hidden');document.getElementById('victoryScreen').style.display='flex';}
+  else showStart();
+}
+function renderAlmanac(){
+  const list=document.getElementById('almanacList'); list.innerHTML='';
+  enemyLore.forEach(e=>{
+    const seen=seenEnemies.includes(e.id);
+    const entry=document.createElement('div');
+    entry.className='alm-entry'+(seen?'':' locked');
+    entry.style.borderLeftColor=seen?e.locColor:'#555';
+    entry.innerHTML=seen?
+      `<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;"><span style="font-size:30px;">${e.icon}</span><div><div style="font-family:Righteous,cursive;font-size:17px;color:#fff;">${e.name}</div><span style="font-size:10px;font-weight:bold;color:${e.locColor};background:${e.locColor}22;padding:2px 7px;border-radius:7px;">📍 ${e.location}</span></div></div><div style="font-size:13px;color:rgba(255,255,255,0.8);">${e.desc}</div>` :
+      `<div style="display:flex;align-items:center;gap:10px;"><span style="font-size:30px;filter:grayscale(1);">❓</span><div style="color:#666;font-size:14px;">Не встречен</div></div>`;
+    list.appendChild(entry);
+  });
+  const seen=enemyLore.filter(e=>seenEnemies.includes(e.id)).length;
+  const s=document.createElement('div');
+  s.style.cssText='text-align:center;margin-top:14px;color:rgba(255,255,255,0.45);font-size:12px;';
+  s.textContent='📖 Встречено: '+seen+'/'+enemyLore.length;
+  list.appendChild(s);
+}
+
+// ===== LOCATION =====
+var currentLocation = localStorage.getItem('currentLocation') || 'mytishchi';
+
+function selectLocation(loc) {
+  currentLocation = loc;
+  localStorage.setItem('currentLocation', loc);
+  var labels = {mytishchi:'🏙️ Мытищи', murino:'🌫️ Мурино', molochnoe:'🕸️ Молочное', multiplayer:'🌍 Мультиплеер'};
+  var el = document.getElementById('locLabel');
+  if (el) el.textContent = 'Выбрано: ' + labels[loc];
+  // Highlight selected
+  ['Myt','Mur','Mol','Multi'].forEach(function(s){ var b=document.getElementById('locBtn'+s); if(b) b.style.borderColor='white'; });
+  var map = {mytishchi:'Myt',murino:'Mur',molochnoe:'Mol',multiplayer:'Multi'};
+  var sel = document.getElementById('locBtn'+map[loc]);
+  if(sel) sel.style.borderColor='#FFD700';
+}
+
+function updateLocationButtons() {
+  var murBtn = document.getElementById('locBtnMur');
+  var molBtn = document.getElementById('locBtnMol');
+  if (murinoUnlocked && murBtn) {
+    murBtn.disabled = false; murBtn.style.opacity = '1';
+    murBtn.textContent = '🌫️ Мурино';
+    murBtn.style.background = 'linear-gradient(135deg,#4B0082,#8B008B)';
+  }
+  if (molochnoeUnlocked && molBtn) {
+    molBtn.disabled = false; molBtn.style.opacity = '1';
+    molBtn.textContent = '🕸️ Молочное';
+    molBtn.style.background = 'linear-gradient(135deg,#228B22,#00CC44)';
+  }
+  // Reset to valid location if locked
+  if (!murinoUnlocked && currentLocation === 'murino') { currentLocation = 'mytishchi'; }
+  if (!molochnoeUnlocked && currentLocation === 'molochnoe') { currentLocation = 'mytishchi'; }
+  selectLocation(currentLocation);
+}
+
+
+window.addEventListener('load', function(){
+  showStart();
+});
+
+</script>
+
+</body>
+</html>
